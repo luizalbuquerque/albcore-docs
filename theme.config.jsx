@@ -1,4 +1,5 @@
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useConfig } from 'nextra-theme-docs'
 
 export default {
@@ -8,9 +9,9 @@ export default {
     </span>
   ),
   project: {
-    link: 'https://github.com/albuquerquetech/albcore-platform',
+    link: 'https://github.com/Albuquerque-Tech/albcore-docs',
   },
-  docsRepositoryBase: 'https://github.com/albuquerquetech/albcore-platform/tree/main/docs-site',
+  docsRepositoryBase: 'https://github.com/Albuquerque-Tech/albcore-docs/tree/main',
   useNextSeoProps() {
     const { asPath } = useRouter()
     if (asPath !== '/') {
@@ -73,9 +74,9 @@ export default {
     text: (
       <span>
         🚀 AlbCore v0.1 em desenvolvimento ativo — acompanhe o{' '}
-        <a href="/roadmap" style={{ textDecoration: 'underline' }}>
+        <Link href="/roadmap" style={{ textDecoration: 'underline' }}>
           Roadmap
-        </a>
+        </Link>
       </span>
     ),
   },

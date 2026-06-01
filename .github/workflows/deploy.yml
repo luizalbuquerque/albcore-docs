@@ -1,0 +1,66 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Caminho onde o Nginx serve os arquivos estáticos (location /documentation).
+env:
+  DEPLOY_PATH: /var/www/albcore-docs
+  DOCS_BASE_PATH: /documentation
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "VPS secrets não configurados — pulando deploy"
+            exit 0
+          fi
+
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
+
+          # Garante que a pasta de destino existe
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
+            "mkdir -p $DEPLOY_PATH"
+
+          # Sincroniza os arquivos estáticos gerados (out/) para a VPS
+          sshpass -p "$VPS_PASSWORD" rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./out/ "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/"
+
+          # Recarrega o Nginx (no-op se a config ainda não existir)
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
+            "nginx -t && systemctl reload nginx || echo 'Nginx não recarregado — verifique a config /documentation'"
+
+          echo "Deploy concluído em $DEPLOY_PATH"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Deploy Docs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Destino:** ${{ env.DEPLOY_PATH }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** https://api-core.albuquerquetech.com.br/documentation" >> $GITHUB_STEP_SUMMARY

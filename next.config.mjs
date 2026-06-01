@@ -6,10 +6,14 @@ const withNextra = nextra({
   defaultShowCopyCode: true,
 })
 
+// Quando servido sob um sub-path (ex.: /documentation via Nginx),
+// definir DOCS_BASE_PATH faz o Next.js prefixar rotas e assets.
+const basePath = process.env.DOCS_BASE_PATH || ''
+
 export default withNextra({
   output: 'export',
+  basePath,
   images: {
     unoptimized: true,
   },
 })
-
