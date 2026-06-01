@@ -1,0 +1,147 @@
+---
+title: Multi-Tenancy
+description: Como o AlbCore implementa isolamento multi-tenant.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Multi-Tenancy
+
+## Modelo Adotado
+
+O AlbCore usa **Shared Database, Shared Schema** com isolamento por `tenant_id`:
+
+- ✅ Um banco PostgreSQL por ambiente
+- ✅ Todas as tabelas têm coluna `tenant_id`
+- ✅ Toda query filtra por `tenant_id` automaticamente
+- ✅ Impossível vazar dados entre tenants se implementado corretamente
+
+<Callout type="warning">
+  **Regra de ouro:** Toda query em tabelas de domínio DEVE incluir `WHERE tenant_id = ?`.
+  Nunca omita esse filtro.
+</Callout>
+
+---
+
+## Fluxo por Requisição
+
+```
+1. Requisição chega com header X-Tenant-Id: tenant-abc
+         ↓
+2. TenantInterceptor.preHandle()
+   └─ Lê X-Tenant-Id
+   └─ Popula TenantContext.setTenantId("tenant-abc")
+         ↓
+3. Controller / Service processam a request
+   └─ Injetam TenantContext via @Autowired
+   └─ Usam tenantContext.getTenantId() nas queries
+         ↓
+4. TenantInterceptor.afterCompletion()
+   └─ TenantContext.clear() — limpa ThreadLocal
+```
+
+---
+
+## Implementação
+
+### 1. TenantContext
+
+```java
+@Component
+@Scope(value = "request", proxyMode = ScopedProxyMode.INTERFACES)
+public class TenantContext {
+    private String tenantId;
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+}
+```
+
+> Usar `@Scope("request")` é mais seguro que ThreadLocal em ambientes assíncronos.
+
+### 2. TenantInterceptor
+
+```java
+@Component
+public class TenantInterceptor implements HandlerInterceptor {
+
+    @Autowired
+    private TenantContext tenantContext;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request,
+                             HttpServletResponse response,
+                             Object handler) {
+        String tenantId = request.getHeader("X-Tenant-Id");
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new TenantException("Header X-Tenant-Id é obrigatório");
+        }
+        tenantContext.setTenantId(tenantId);
+        return true;
+    }
+}
+```
+
+### 3. Uso em Repository
+
+```java
+public interface ScheduleSpringDataRepository extends JpaRepository<ScheduleJpa, String> {
+    Optional<ScheduleJpa> findByIdAndTenantId(String id, String tenantId);
+    List<ScheduleJpa>     findAllByTenantId(String tenantId);
+    void                  deleteByIdAndTenantId(String id, String tenantId);
+}
+```
+
+```java
+// No ScheduleRepositoryAdapter:
+public Optional<ScheduleEntity> findById(String id) {
+    String tenantId = tenantContext.getTenantId();
+    return repository.findByIdAndTenantId(id, tenantId)
+                     .map(this::toDomain);
+}
+```
+
+---
+
+## Schema SQL
+
+```sql
+-- Toda tabela de domínio deve ter tenant_id NOT NULL
+CREATE TABLE schedule (
+    id         UUID         NOT NULL DEFAULT gen_random_uuid(),
+    tenant_id  VARCHAR(100) NOT NULL,   -- ← obrigatório
+    title      VARCHAR(255) NOT NULL,
+    status     VARCHAR(50)  NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT now(),
+
+    CONSTRAINT pk_schedule PRIMARY KEY (id)
+);
+
+-- Índice composto — filtragem por tenant é sempre a primeira condição
+CREATE INDEX idx_schedule_tenant ON schedule (tenant_id);
+CREATE INDEX idx_schedule_tenant_status ON schedule (tenant_id, status);
+```
+
+---
+
+## Testando Isolamento
+
+```java
+@Test
+void tenantDataMustBeIsolated() {
+    // Tenant A cria um schedule
+    tenantContext.setTenantId("tenant-a");
+    String scheduleId = service.create(buildRequest()).getId();
+
+    // Tenant B tenta acessar — deve falhar
+    tenantContext.setTenantId("tenant-b");
+    assertThrows(ResourceNotFoundException.class,
+        () -> service.findById(scheduleId));
+}
+```
+

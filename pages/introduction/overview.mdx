@@ -1,0 +1,81 @@
+---
+title: Visão Geral
+description: O que é o AlbCore e quais problemas ele resolve.
+---
+
+import { Callout } from 'nextra/components'
+
+# Visão Geral
+
+## O que é o AlbCore?
+
+**AlbCore** é uma plataforma SaaS whitelabel desenvolvida como **Modular Monolith** com:
+
+| Característica | Detalhe |
+|----------------|---------|
+| **Multi-tenancy** | Isolamento por `tenant_id` em todas as tabelas |
+| **Modular Monolith** | Módulos independentes, um único deployable |
+| **Clean Architecture** | Domain / Application / Infrastructure / Presentation |
+| **API REST versionada** | `/api/v1/`, `/api/v2/` |
+| **Feature Flags** | Ative/desative features por tenant |
+| **JWT + Spring Security** | Autenticação stateless |
+| **Docker** | Ambientes dev / staging / prod |
+
+---
+
+## Por que Modular Monolith?
+
+<Callout type="info">
+  Monolito modular ≠ monolito bagunçado. É microserviços sem a complexidade operacional.
+</Callout>
+
+No estágio inicial, o monolito modular oferece:
+
+- ✅ **Deploy único** — sem orquestração de containers por serviço
+- ✅ **Transações simples** — sem distributed transactions
+- ✅ **Refatoração fácil** — mover código entre módulos é trivial
+- ✅ **Mesma base de código** — equipe pequena, alta produtividade
+- 🔄 **Migração futura** — cada módulo pode se tornar um microserviço
+
+---
+
+## Modelo de Produto (White Label)
+
+```
+Albuquerque Tech
+└── AlbCore Platform
+    │
+    ├── Core Domains (sempre ativos)
+    │   ├── tenant       → Gestão de tenants
+    │   ├── identity     → Usuários, Roles, Auth
+    │   ├── billing      → Planos, Cobranças
+    │   └── product      → Template, Feature Flags
+    │
+    └── Modules (ativados por Feature Flag)
+        ├── scheduling   → Agendamentos
+        ├── marketplace  → Marketplace B2B
+        ├── payment      → Pagamentos
+        ├── crm          → Gestão de clientes
+        ├── workflow     → Fluxos de trabalho
+        ├── notification → Notificações
+        ├── document     → Gestão documental
+        └── bidding      → Licitações/Cotações
+```
+
+---
+
+## Isolamento por Tenant
+
+Cada tenant (empresa/cliente) é completamente isolado:
+
+```
+Tenant A (empresa-a)      Tenant B (empresa-b)
+    │                          │
+    ▼                          ▼
+ schedule (tenant_id=A)    schedule (tenant_id=B)
+ users    (tenant_id=A)    users    (tenant_id=B)
+ billing  (tenant_id=A)    billing  (tenant_id=B)
+```
+
+Um tenant **nunca** acessa dados de outro — garantido a nível de query.
+

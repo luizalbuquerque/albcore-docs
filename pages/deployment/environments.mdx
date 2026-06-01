@@ -1,0 +1,99 @@
+---
+title: Ambientes
+description: Diferenças entre dev, staging e prod no AlbCore.
+---
+
+import { Callout } from 'nextra/components'
+
+# Ambientes
+
+## Comparativo
+
+| Característica | Dev | Staging | Prod |
+|----------------|-----|---------|------|
+| **Arquivo** | `docker-compose.dev.yaml` | `docker-compose.staging.yaml` | `docker-compose.prod.yaml` |
+| **Env vars** | `infra/env/.env.dev` | `infra/env/.env.staging` | `infra/env/.env.prod` |
+| **Resource limits** | Sem limites | Moderados | Estritos |
+| **DB persistence** | Volume local | Volume nomeado | Volume externo gerenciado |
+| **Logs** | Debug | Info | Warn |
+| **Replicas** | 1 | 1 | 2+ |
+
+---
+
+## Dev (Local)
+
+```bash
+./docker-compose.sh dev up
+```
+
+Serviços locais:
+- `postgresql://localhost:5432/albcore_dev` — user: `postgres` / senha: `postgres_dev_insecure`
+- `redis://localhost:6379`
+- RabbitMQ UI: http://localhost:15672 — `admin` / `admin_dev`
+- API: http://localhost:8080
+
+<Callout type="info">
+  No dev, logs em `DEBUG` e sem limites de memória/CPU.
+</Callout>
+
+---
+
+## Staging
+
+```bash
+./docker-compose.sh staging up -d
+```
+
+- Simula produção com dados de teste
+- Resource limits moderados (512MB / 0.5 CPU por serviço)
+- Banco separado do dev: `albcore_staging`
+
+---
+
+## Produção
+
+```bash
+./docker-compose.sh prod up -d
+```
+
+<Callout type="warning">
+  Nunca execute `prod up` sem confirmar que `.env.prod` tem as credenciais corretas e seguras.
+</Callout>
+
+- Resource limits estritos (2GB / 1 CPU para app)
+- Restart policy: `always`
+- Logs apenas `WARN` e `ERROR`
+- Healthchecks ativos em todos os serviços
+
+---
+
+## Variáveis de Ambiente
+
+Copie o template e preencha:
+
+```bash
+cp infra/env/.env.example infra/env/.env.dev
+# Edite .env.dev com suas credenciais locais
+```
+
+Variáveis principais:
+
+```dotenv
+# Banco
+POSTGRES_DB=albcore_dev
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres_dev_insecure
+
+# App
+SPRING_PROFILES_ACTIVE=dev
+JWT_SECRET=sua-chave-jwt-super-secreta-minimo-256-bits
+JWT_EXPIRATION=86400000
+
+# Redis
+REDIS_PASSWORD=
+
+# RabbitMQ
+RABBITMQ_USER=admin
+RABBITMQ_PASS=admin_dev
+```
+

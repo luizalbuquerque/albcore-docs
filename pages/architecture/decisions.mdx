@@ -1,0 +1,94 @@
+---
+title: Decisões Arquiteturais
+description: ADRs — Architecture Decision Records do AlbCore.
+---
+
+import { Callout } from 'nextra/components'
+
+# Decisões Arquiteturais (ADRs)
+
+## ADR-001: Modular Monolith vs Microserviços
+
+**Decisão:** Modular Monolith
+**Status:** Aceito
+
+**Contexto:** Plataforma nova, equipe pequena, múltiplos módulos independentes.
+
+**Razão:**
+- ✅ Deploy simples — um JAR
+- ✅ Sem complexidade de rede inter-serviço
+- ✅ Transações locais (sem Saga/2PC)
+- ✅ Fronteiras de módulo definidas por pacote → fácil migrar para microserviço depois
+
+**Trade-off:** Escalar um módulo exige escalar a aplicação toda. Aceitável na v1.
+
+---
+
+## ADR-002: Shared Schema Multi-Tenancy
+
+**Decisão:** Shared Database, Shared Schema com `tenant_id`
+**Status:** Aceito
+
+**Contexto:** Múltiplos tenants, custo de infraestrutura a minimizar.
+
+**Razão:**
+- ✅ Um banco por ambiente — backups, manutenção simples
+- ✅ Onboarding de novo tenant = apenas inserção na tabela `tenant`
+- ✅ Dashboards cross-tenant simples (relatórios)
+
+**Trade-off:** Vazamento de dados se falta `WHERE tenant_id`. Mitigado por code review e testes.
+
+<Callout type="warning">
+  **ADR-002-FUTURE:** Quando necessário (compliance LGPD severa ou performance), migrar para
+  Schema-per-Tenant (v2.0).
+</Callout>
+
+---
+
+## ADR-003: JWT Stateless
+
+**Decisão:** JWT sem sessão no servidor
+**Status:** Aceito
+
+**Razão:**
+- ✅ Stateless — qualquer instância serve qualquer request
+- ✅ Horizontal scaling sem Redis compartilhado para sessão
+- ✅ Claims no token (tenantId, roles) evitam consultas extra ao DB
+
+**Trade-off:** Revogação de token exige blacklist no Redis (apenas no logout).
+
+---
+
+## ADR-004: ApiResponse Wrapper
+
+**Decisão:** Toda resposta envolve em `ApiResponse<T>`
+**Status:** Aceito
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "...",
+  "data": { ... },
+  "timestamp": "2026-05-22T14:00:00"
+}
+```
+
+**Razão:**
+- ✅ Contrato de API consistente para todos os endpoints
+- ✅ Frontend sabe sempre onde está o dado (`data`)
+- ✅ Erros sempre no mesmo formato
+
+---
+
+## ADR-005: Clean Code Architecture por Camadas
+
+**Decisão:** Domain / Application / Infrastructure / Presentation
+**Status:** Aceito
+
+**Invariantes:**
+1. Domain não importa Spring, JPA ou qualquer framework
+2. Infrastructure implementa interfaces definidas no Domain
+3. Application orquestra, nunca contém regra de negócio
+4. Presentation só valida input HTTP — não tem lógica de negócio
+

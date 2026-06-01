@@ -1,0 +1,232 @@
+---
+title: Criar Novo Módulo
+description: Checklist completo para adicionar um novo módulo ao AlbCore.
+---
+
+import { Steps, Callout } from 'nextra/components'
+
+# Criar Novo Módulo
+
+<Callout type="info">
+  Substitua `{nome}` pelo nome do seu módulo (ex: `scheduling`, `crm`, `payment`).
+</Callout>
+
+---
+
+## Checklist Completo
+
+<Steps>
+
+### Criar estrutura de pastas
+
+```
+src/main/java/br/com/albcore/modules/{nome}/
+├── domain/
+│   ├── {Nome}Entity.java
+│   ├── {Nome}Status.java         (enum)
+│   └── I{Nome}Repository.java    (interface/port)
+├── application/
+│   ├── {Nome}ApplicationService.java
+│   ├── {Nome}Request.java        (record)
+│   ├── {Nome}Response.java       (record)
+│   └── {Nome}Mapper.java
+├── infrastructure/
+│   ├── {Nome}Jpa.java
+│   ├── {Nome}SpringDataRepository.java
+│   └── {Nome}RepositoryAdapter.java
+└── presentation/
+    └── {Nome}Controller.java
+```
+
+### Implementar Domain Layer
+
+```java
+// {Nome}Entity.java — sem anotações Spring ou JPA
+public class {Nome}Entity {
+    private String id;
+    private String tenantId;
+    // campos do domínio...
+
+    public void validate() {
+        if (/* regra violada */) {
+            throw new BusinessException("Mensagem de erro");
+        }
+    }
+}
+
+// I{Nome}Repository.java — port
+public interface I{Nome}Repository {
+    {Nome}Entity save({Nome}Entity entity);
+    Optional<{Nome}Entity> findById(String id);
+    List<{Nome}Entity> findAll();
+    void deleteById(String id);
+}
+```
+
+### Implementar Application Layer
+
+```java
+@Service
+@RequiredArgsConstructor
+public class {Nome}ApplicationService {
+
+    private final I{Nome}Repository repository;
+    private final TenantContext tenantContext;
+
+    public {Nome}Response create({Nome}Request request) {
+        var entity = new {Nome}Entity();
+        entity.setId(UUID.randomUUID().toString());
+        entity.setTenantId(tenantContext.getTenantId());
+        // popular demais campos...
+        entity.validate();
+
+        var saved = repository.save(entity);
+        return {Nome}Mapper.toResponse(saved);
+    }
+
+    public {Nome}Response findById(String id) {
+        return repository.findById(id)
+            .map({Nome}Mapper::toResponse)
+            .orElseThrow(() -> new ResourceNotFoundException("{Nome}", id));
+    }
+}
+```
+
+### Implementar Infrastructure Layer
+
+```java
+// {Nome}Jpa.java
+@Entity
+@Table(name = "{nome}")
+@Data
+public class {Nome}Jpa {
+    @Id
+    private String id;
+
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
+
+    // demais campos...
+}
+
+// {Nome}RepositoryAdapter.java
+@Repository
+@RequiredArgsConstructor
+public class {Nome}RepositoryAdapter implements I{Nome}Repository {
+
+    private final {Nome}SpringDataRepository springRepository;
+    private final TenantContext tenantContext;
+
+    @Override
+    public {Nome}Entity save({Nome}Entity entity) {
+        var jpa = toJpa(entity);
+        var saved = springRepository.save(jpa);
+        return toDomain(saved);
+    }
+
+    @Override
+    public Optional<{Nome}Entity> findById(String id) {
+        return springRepository
+            .findByIdAndTenantId(id, tenantContext.getTenantId())
+            .map(this::toDomain);
+    }
+}
+```
+
+### Criar Controller REST
+
+```java
+@RestController
+@RequestMapping("/api/v1/{nome}s")
+@RequiredArgsConstructor
+public class {Nome}Controller {
+
+    private final {Nome}ApplicationService service;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<{Nome}Response>>> list() {
+        return ResponseEntity.ok(ApiResponse.success(service.findAll()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<{Nome}Response>> findById(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(service.findById(id)));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<{Nome}Response>> create(
+            @Valid @RequestBody {Nome}Request request) {
+        return ResponseEntity.status(201)
+            .body(ApiResponse.success(service.create(request)));
+    }
+}
+```
+
+### Criar Flyway Migration
+
+```bash
+# Arquivo: src/main/resources/db/migration/V00X__create_{nome}_table.sql
+```
+
+```sql
+CREATE TABLE {nome} (
+    id         VARCHAR(36)  NOT NULL,
+    tenant_id  VARCHAR(100) NOT NULL,
+    -- campos específicos do módulo
+    created_at TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP    NOT NULL DEFAULT now(),
+
+    CONSTRAINT pk_{nome} PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_{nome}_tenant    ON {nome} (tenant_id);
+CREATE INDEX idx_{nome}_tenant_at ON {nome} (tenant_id, created_at DESC);
+```
+
+### Registrar Feature Flag (opcional)
+
+```sql
+-- Se o módulo é opcional (ativado por flag):
+INSERT INTO feature_flag (id, tenant_id, feature_key, enabled)
+SELECT gen_random_uuid(), id, 'MODULE_{NOME}', false
+FROM tenant;
+```
+
+### Escrever Testes
+
+```java
+// Unit Test — Domain
+@Test
+void shouldValidate{Nome}Entity() {
+    var entity = new {Nome}Entity();
+    assertThrows(BusinessException.class, entity::validate);
+}
+
+// Integration Test — Service
+@SpringBootTest
+class {Nome}ApplicationServiceTest {
+    @Test
+    void shouldCreate{Nome}() {
+        var request = new {Nome}Request(/* ... */);
+        var response = service.create(request);
+        assertNotNull(response.id());
+    }
+}
+```
+
+### Documentar
+
+- Adicione uma página em `docs-site/pages/modules/{nome}.mdx`
+- Atualize a tabela de status em `docs-site/pages/modules/overview.mdx`
+
+</Steps>
+
+---
+
+## Exemplos de Módulos Existentes
+
+Consulte os módulos já implementados como referência:
+- `src/.../shared/` — estrutura base
+- `src/.../product/featureflag/` — feature flags
+

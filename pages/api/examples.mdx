@@ -1,0 +1,129 @@
+---
+title: Exemplos Completos
+description: Exemplos de chamadas curl para todos os endpoints principais.
+---
+
+# Exemplos de API
+
+## Variáveis de Ambiente
+
+```bash
+BASE_URL="http://localhost:8080"
+TENANT="tenant-abc"
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+---
+
+## Auth
+
+### Login
+```bash
+curl -X POST $BASE_URL/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@empresa.com","password":"senha123","tenantId":"'$TENANT'"}'
+```
+
+---
+
+## Health Check
+
+```bash
+# Público — sem auth
+curl $BASE_URL/api/health
+```
+
+```json
+{
+  "success": true,
+  "code": "UP",
+  "data": {
+    "status": "UP",
+    "version": "0.1.0",
+    "environment": "development"
+  }
+}
+```
+
+---
+
+## Scheduling
+
+### Criar agendamento
+```bash
+curl -X POST $BASE_URL/api/v1/schedules \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Sincronização diária",
+    "description": "Sincroniza dados com sistema externo",
+    "executionTime": "2026-06-01T10:00:00",
+    "recurrence": "DAILY"
+  }'
+```
+
+### Listar agendamentos
+```bash
+curl -X GET "$BASE_URL/api/v1/schedules?page=0&size=20" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT"
+```
+
+### Buscar por ID
+```bash
+curl -X GET $BASE_URL/api/v1/schedules/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT"
+```
+
+### Atualizar
+```bash
+curl -X PUT $BASE_URL/api/v1/schedules/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Sincronização atualizada"}'
+```
+
+### Deletar
+```bash
+curl -X DELETE $BASE_URL/api/v1/schedules/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT"
+```
+
+---
+
+## Tenant
+
+### Criar tenant
+```bash
+curl -X POST $BASE_URL/api/v1/tenants \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Empresa Exemplo LTDA",
+    "slug": "empresa-exemplo",
+    "plan": "STARTER"
+  }'
+```
+
+---
+
+## Feature Flags
+
+### Verificar flag
+```bash
+curl -X GET $BASE_URL/api/v1/feature-flags/MODULE_MARKETPLACE \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT"
+```
+
+### Listar flags do tenant
+```bash
+curl -X GET $BASE_URL/api/v1/feature-flags \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: $TENANT"
+```
+

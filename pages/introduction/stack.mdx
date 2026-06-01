@@ -1,0 +1,69 @@
+---
+title: Stack Técnico
+description: Tecnologias e versões utilizadas na plataforma AlbCore.
+---
+
+# Stack Técnico
+
+## Core
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **Java** | 26 | JDK + linguagem |
+| **Spring Boot** | 4.0.6 | Framework principal |
+| **Maven** | Wrapper | Build tool |
+| **Spring Security** | Latest | Autenticação & autorização |
+| **Spring Data JPA** | Latest | ORM / Repository pattern |
+
+## Banco de Dados
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **PostgreSQL** | 16 | Banco principal (multi-tenant) |
+| **Redis** | 7 | Cache & sessões |
+| **Flyway** | Latest | Migrações de schema |
+| **Hibernate** | Latest | JPA provider |
+
+## Mensageria & Integração
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **RabbitMQ** | 3.12 | Message broker |
+
+## Segurança
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **JJWT** | 0.12.3 | JWT tokens |
+
+## Utilitários
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **Lombok** | 1.18.32 | Redução de boilerplate |
+| **MapStruct** | — | Mapeamento de DTOs |
+
+## Infraestrutura
+
+| Componente | Versão | Propósito |
+|-----------|--------|-----------|
+| **Docker** | Latest | Containerização |
+| **Docker Compose** | Latest | Orquestração local |
+
+## Decisões Técnicas
+
+### Por que PostgreSQL e não MySQL?
+- JSON nativo (jsonb) — útil para configs por tenant
+- Window functions para relatórios
+- Melhor suporte a row-level security (futuro)
+
+### Por que RabbitMQ e não Kafka?
+- Menor overhead operacional
+- Suficiente para volume inicial
+- Migração para Kafka quando >1M msg/dia
+
+### Por que JWT stateless?
+- Horizontal scaling sem sessão compartilhada
+- Sem round-trip ao banco para validar token
+- Redis usado apenas para blacklist (logout) quando necessário
+

@@ -1,0 +1,77 @@
+---
+title: AlbCore Platform
+description: Plataforma SaaS whitelabel com arquitetura modular, multi-tenancy e Clean Architecture.
+---
+
+import { Cards, Card, Callout, Steps } from 'nextra/components'
+
+# ⬡ AlbCore Platform
+
+**AlbCore** é uma plataforma **SaaS whitelabel** construída pela [Albuquerque Tech](https://albuquerquetech.com.br) como motor central para produtos verticais B2B.
+
+<Callout type="info">
+  Versão atual: **v0.1** · Java 26 · Spring Boot 4.0.6 · PostgreSQL 16 · Redis 7
+</Callout>
+
+---
+
+## O que é o AlbCore?
+
+O AlbCore é um **Modular Monolith** com isolamento por tenant, pronto para ser customizado em diferentes produtos (white label). Cada produto herda toda a infraestrutura da plataforma e ativa apenas os módulos necessários via **Feature Flags**.
+
+```
+Albuquerque Tech
+└── AlbCore Platform (este repositório)
+    ├── Produto A   (scheduling + marketplace)
+    ├── Produto B   (crm + workflow)
+    └── Produto C   (bidding + document)
+```
+
+---
+
+## Começar Rapidamente
+
+<Steps>
+
+### Clone o repositório
+
+```bash
+git clone https://github.com/albuquerquetech/albcore-platform
+cd albcore-platform
+```
+
+### Suba a infraestrutura local
+
+```bash
+cp infra/env/.env.dev .env
+./docker-compose.sh dev up
+```
+
+### Rode a aplicação
+
+```bash
+./mvnw spring-boot:run
+```
+
+### Verifique o health
+
+```bash
+curl http://localhost:8080/api/health
+# {"success":true,"code":"UP","data":{"status":"UP"}}
+```
+
+</Steps>
+
+---
+
+## Explore a Documentação
+
+<Cards>
+  <Card title="🗺️ Introdução" href="/introduction/overview" />
+  <Card title="🏗️ Arquitetura" href="/architecture/layers" />
+  <Card title="📦 Módulos" href="/modules/overview" />
+  <Card title="🔌 API Reference" href="/api/authentication" />
+  <Card title="🐳 Deploy & Infra" href="/deployment/docker" />
+  <Card title="🤝 Contribuindo" href="/contributing/new-module" />
+</Cards>
+

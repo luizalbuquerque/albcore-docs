@@ -1,0 +1,80 @@
+---
+title: Roadmap
+description: Evolução planejada da plataforma AlbCore.
+---
+
+import { Callout } from 'nextra/components'
+
+# Roadmap
+
+<Callout type="info">
+  Roadmap vivo — atualizado conforme o desenvolvimento avança.
+</Callout>
+
+---
+
+## v0.1 — Foundation *(atual)*
+
+**Meta:** Base sólida, multi-tenancy, segurança e primeiros módulos.
+
+- [x] Scaffolding do projeto (Clean Architecture)
+- [x] TenantContext + TenantInterceptor
+- [x] JWT + Spring Security
+- [x] ApiResponse padrão
+- [x] GlobalExceptionHandler
+- [x] Docker (dev/staging/prod)
+- [x] HealthController
+- [x] Feature Flags (product/featureflag)
+- [ ] Tenant module completo
+- [ ] Identity module (Users, Roles, Auth endpoints)
+- [ ] Billing module (Planos, Assinaturas)
+- [ ] Flyway migrations base
+
+---
+
+## v0.2 — First Modules
+
+**Meta:** Primeiros módulos funcionais e admin panel.
+
+- [ ] Scheduling module completo
+- [ ] Notification module (email/push)
+- [ ] Admin panel (React ou Thymeleaf)
+- [ ] Cobertura de testes > 80%
+- [ ] CI/CD pipeline (GitHub Actions)
+
+---
+
+## v1.0 — Production Ready
+
+**Meta:** Todos os módulos core, pronto para clientes reais.
+
+- [ ] Todos os 8 módulos implementados
+- [ ] Analytics & Reporting básico
+- [ ] Webhook system
+- [ ] Rate Limiting por tenant
+- [ ] SAML / OAuth2 / Google SSO
+- [ ] Documentação Swagger/OpenAPI
+- [ ] Monitoramento (Prometheus + Grafana)
+
+---
+
+## v2.0+ — Scale
+
+**Meta:** Preparar para alta escala e compliance.
+
+- [ ] Schema-per-tenant (isolamento total)
+- [ ] Event-driven via RabbitMQ/Kafka
+- [ ] CQRS para queries complexas
+- [ ] Separação de serviços críticos
+- [ ] Multi-region deployment
+- [ ] LGPD / GDPR compliance completo
+
+---
+
+## Como Sugerir Features
+
+Abra uma issue no repositório com o label `feature-request` descrevendo:
+1. O problema que resolve
+2. A proposta de solução
+3. Módulo impactado
+

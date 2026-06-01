@@ -1,0 +1,118 @@
+---
+title: Segurança
+description: JWT, Spring Security e controle de acesso no AlbCore.
+---
+
+import { Callout } from 'nextra/components'
+
+# Segurança
+
+## Autenticação JWT
+
+O AlbCore usa **JWT stateless** — sem sessão no servidor:
+
+```
+Login  →  JWT Token  →  Requests com Authorization: Bearer {JWT}
+```
+
+### JwtProvider
+
+```java
+// Gerar token
+String token = jwtProvider.generateToken(userId, Map.of(
+    "email",    user.getEmail(),
+    "tenantId", user.getTenantId(),
+    "roles",    user.getRoles()
+));
+
+// Validar token
+boolean isValid = jwtProvider.validateToken(token);
+
+// Extrair subject (userId)
+String userId = jwtProvider.extractSubject(token);
+```
+
+### Configuração
+
+```yaml
+# application.yaml
+jwt:
+  secret: "sua-chave-secreta-minimo-256-bits"
+  expiration: 86400000  # 24h em ms
+```
+
+---
+
+## Spring Security
+
+### Hierarquia de Roles
+
+```
+ROLE_SUPER_ADMIN   → tudo (across tenants)
+ROLE_ADMIN         → tudo no tenant
+ROLE_MANAGER       → CRUD de recursos
+ROLE_USER          → leitura + próprios recursos
+ROLE_VIEWER        → somente leitura
+```
+
+### Uso nos Controllers
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+@PostMapping
+public ResponseEntity<ApiResponse<ScheduleResponse>> create(...) { ... }
+
+@PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+@PutMapping("/{id}")
+public ResponseEntity<ApiResponse<ScheduleResponse>> update(...) { ... }
+
+@PreAuthorize("hasRole('VIEWER')")
+@GetMapping
+public ResponseEntity<ApiResponse<List<ScheduleResponse>>> list(...) { ... }
+```
+
+---
+
+## Hierarquia de Exceções
+
+```
+ApiException (base — 400 Bad Request)
+├── BusinessException      → violação de regra de negócio
+├── ResourceNotFoundException → 404 Not Found
+├── UnauthorizedException  → 401 Unauthorized
+├── ForbiddenException     → 403 Forbidden
+└── TenantException        → tenant inválido/ausente
+```
+
+### Uso
+
+```java
+// No service:
+if (schedule.isExpired()) {
+    throw new BusinessException("Schedule expirado não pode ser executado");
+}
+
+// No repository:
+return repository.findByIdAndTenantId(id, tenantId)
+    .orElseThrow(() -> new ResourceNotFoundException("Schedule", id));
+```
+
+---
+
+## Headers Obrigatórios
+
+<Callout type="warning">
+  Toda requisição autenticada deve incluir **ambos** os headers:
+</Callout>
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+X-Tenant-Id: tenant-abc-123
+```
+
+| Header | Obrigatório | Descrição |
+|--------|-------------|-----------|
+| `Authorization` | Sim | `Bearer {JWT}` |
+| `X-Tenant-Id` | Sim | Identificador do tenant |
+| `Content-Type` | Para POST/PUT | `application/json` |
+

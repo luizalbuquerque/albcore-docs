@@ -1,0 +1,90 @@
+---
+title: Fluxo de Requisição
+description: Rastreie uma requisição do cliente até o banco de dados.
+---
+
+# Fluxo de Requisição
+
+Veja como uma requisição percorre todas as camadas do AlbCore:
+
+## Exemplo: Criar Agendamento
+
+```
+POST /api/v1/schedules
+Headers: X-Tenant-Id: tenant-abc
+         Authorization: Bearer eyJ...
+Body:    { "title": "Daily sync", "executionTime": "2026-06-01T10:00" }
+```
+
+### Passo a Passo
+
+```
+1. TenantInterceptor.preHandle()
+   ├── Lê header X-Tenant-Id: "tenant-abc"
+   └── TenantContext.setTenantId("tenant-abc")
+
+2. JwtAuthenticationFilter.doFilterInternal()
+   ├── Extrai Bearer token
+   ├── JwtProvider.validateToken(token) → true
+   ├── JwtProvider.extractSubject(token) → "user-123"
+   └── Popula SecurityContext com Authentication
+
+3. ScheduleController.create(@Valid @RequestBody ScheduleRequest)
+   ├── Bean Validation (@NotBlank, @Future, etc.)
+   └── Chama service.create(request)
+
+4. ScheduleApplicationService.create(request)
+   ├── Cria ScheduleEntity com tenantId = "tenant-abc"
+   ├── entity.validate() → regras de domínio
+   └── repository.save(entity) → retorna ScheduleResponse
+
+5. ScheduleRepositoryAdapter.save(entity)
+   ├── toDomainEntity(entity) → ScheduleJpa
+   └── springRepository.save(jpaEntity) → ScheduleJpa salvo
+
+6. Database (PostgreSQL)
+   └── INSERT INTO schedule (id, tenant_id, title, ...) VALUES (...)
+
+7. Resposta 201 Created
+   └── ApiResponse.success(scheduleResponse)
+```
+
+---
+
+## Diagrama de Sequência
+
+```
+Client          Controller      Service         Repository      DB
+  │                │               │                │            │
+  │─ POST /api/ ──►│               │                │            │
+  │                │─ validate() ──│                │            │
+  │                │── create() ──►│                │            │
+  │                │               │── save() ─────►│            │
+  │                │               │                │── INSERT ─►│
+  │                │               │                │◄────────── │
+  │                │               │◄───────────────│            │
+  │                │◄──────────────│                │            │
+  │◄── 201 ────────│               │                │            │
+```
+
+---
+
+## Resposta Padrão
+
+```json
+{
+  "success": true,
+  "code": "CREATED",
+  "message": "Schedule created successfully",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "tenantId": "tenant-abc",
+    "title": "Daily sync",
+    "status": "PENDING",
+    "executionTime": "2026-06-01T10:00:00",
+    "createdAt": "2026-05-22T14:30:00"
+  },
+  "timestamp": "2026-05-22T14:30:00"
+}
+```
+

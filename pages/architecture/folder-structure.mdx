@@ -1,0 +1,133 @@
+---
+title: Estrutura de Pastas
+description: Mapa completo da estrutura de diretórios do AlbCore Platform.
+---
+
+# Estrutura de Pastas
+
+## Visão Geral
+
+```
+albcore-platform/
+├── docs-site/          ← Site de documentação (este site!)
+├── docs/               ← Docs markdown (fonte)
+├── infra/              ← Docker, scripts, env
+├── src/                ← Código Java
+└── pom.xml
+```
+
+---
+
+## Código Java (`src/main/java/br/com/albcore/`)
+
+```
+src/main/java/br/com/albcore/
+│
+├── AlbCoreApplication.java            ← Entry point
+│
+├── shared/                            ← Componentes transversais
+│   ├── config/                        ← SecurityConfig, WebConfig, JacksonConfig
+│   ├── component/                     ← TenantContext, TenantInterceptor
+│   ├── exception/                     ← ApiException, GlobalExceptionHandler
+│   ├── security/                      ← JwtProvider, JwtAuthenticationFilter
+│   ├── util/                          ← ApiResponse, Validators
+│   └── presentation/                  ← HealthController
+│
+├── tenant/                            ← Domínio: Tenants
+│   ├── domain/
+│   │   ├── TenantEntity.java
+│   │   ├── TenantStatus.java
+│   │   └── ITenantRepository.java
+│   ├── application/
+│   │   ├── TenantApplicationService.java
+│   │   ├── TenantRequest.java
+│   │   └── TenantResponse.java
+│   ├── infrastructure/
+│   │   ├── TenantJpa.java
+│   │   ├── TenantSpringDataRepository.java
+│   │   └── TenantRepositoryAdapter.java
+│   └── presentation/
+│       └── TenantController.java
+│
+├── identity/                          ← Domínio: Usuários & Auth
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── presentation/
+│
+├── billing/                           ← Domínio: Cobranças & Planos
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── presentation/
+│
+├── product/                           ← White Label
+│   ├── template/
+│   └── featureflag/
+│
+└── modules/                           ← Módulos reutilizáveis
+    ├── scheduling/
+    ├── marketplace/
+    ├── payment/
+    ├── crm/
+    ├── workflow/
+    ├── notification/
+    ├── document/
+    └── bidding/
+        ├── domain/
+        ├── application/
+        ├── infrastructure/
+        └── presentation/
+```
+
+---
+
+## Infraestrutura (`infra/`)
+
+```
+infra/
+├── docker/
+│   ├── Dockerfile                  ← Multi-stage build
+│   ├── docker-compose.dev.yaml     ← Dev local
+│   ├── docker-compose.staging.yaml ← Staging
+│   └── docker-compose.prod.yaml    ← Produção
+├── scripts/
+│   ├── docker-compose.sh           ← Manager (dev|staging|prod)
+│   └── db/
+│       └── init-db.sql             ← Schemas iniciais
+└── env/
+    ├── .env.example                ← Template (git tracked)
+    ├── .env.dev                    ← (git ignored)
+    ├── .env.staging                ← (git ignored)
+    └── .env.prod                   ← (git ignored)
+```
+
+---
+
+## Convenção por Módulo
+
+Cada módulo segue **exatamente** a mesma estrutura:
+
+```
+modules/{nome}/
+├── domain/
+│   ├── {Nome}Entity.java          ← Aggregate Root
+│   ├── {Nome}Id.java              ← Value Object (opcional)
+│   ├── {Nome}Status.java          ← Enum de status
+│   └── I{Nome}Repository.java     ← Port (interface)
+│
+├── application/
+│   ├── {Nome}ApplicationService.java
+│   ├── {Nome}Request.java         ← DTO entrada (record)
+│   ├── {Nome}Response.java        ← DTO saída (record)
+│   └── {Nome}Mapper.java          ← Entity ↔ DTO
+│
+├── infrastructure/
+│   ├── {Nome}Jpa.java             ← @Entity JPA
+│   ├── {Nome}SpringDataRepository.java
+│   └── {Nome}RepositoryAdapter.java
+│
+└── presentation/
+    └── {Nome}Controller.java      ← @RestController
+```
+

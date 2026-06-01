@@ -1,0 +1,178 @@
+---
+title: Camadas (Clean Architecture)
+description: Como o AlbCore organiza as camadas de Domain, Application, Infrastructure e Presentation.
+---
+
+import { Callout } from 'nextra/components'
+
+# Clean Architecture em Camadas
+
+## Visão em Diagrama
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    REST API (Spring Boot)                   │
+│                 /api/v1/*, /api/v2/*, ...                   │
+├─────────────────────────────────────────────────────────────┤
+│                    Presentation Layer                        │
+│            (Controllers, Request/Response DTOs)             │
+├─────────────────────────────────────────────────────────────┤
+│                   Application Layer                         │
+│       (Use Cases, Services, Business Orchestration)         │
+├─────────────────────────────────────────────────────────────┤
+│                     Domain Layer                            │
+│     (Entities, Value Objects, Business Rules — Puro)        │
+├─────────────────────────────────────────────────────────────┤
+│                  Infrastructure Layer                       │
+│    (Repositories JPA, Banco, Adapters, Externos)            │
+├─────────────────────────────────────────────────────────────┤
+│                   Shared Components                         │
+│       (Security, Exceptions, Utils, Multi-Tenancy)          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Fluxo de dependência:**
+```
+Presentation → Application → Domain
+Infrastructure → Application + Domain
+Shared → Todos os módulos
+```
+
+<Callout type="info">
+  A camada **Domain** não depende de ninguém. É Java puro — sem anotações Spring, sem JPA.
+</Callout>
+
+---
+
+## Domain Layer
+
+**O que fica aqui:** Regras de negócio puras, entidades de domínio, interfaces de repositório (ports).
+
+```java
+// Aggregate Root — puro Java
+public class ScheduleEntity {
+    private String id;
+    private String tenantId;
+    private String title;
+    private ScheduleStatus status;
+    private LocalDateTime executionTime;
+
+    public void activate() {
+        if (this.status == ScheduleStatus.CANCELLED) {
+            throw new BusinessException("Agendamento cancelado não pode ser ativado");
+        }
+        this.status = ScheduleStatus.ACTIVE;
+    }
+
+    public void validate() {
+        if (title == null || title.isBlank()) {
+            throw new BusinessException("Título é obrigatório");
+        }
+    }
+}
+
+// Port (interface) — Infrastructure implementa
+public interface IScheduleRepository {
+    ScheduleEntity save(ScheduleEntity entity);
+    Optional<ScheduleEntity> findById(String id);
+    List<ScheduleEntity> findAll();
+    void deleteById(String id);
+}
+```
+
+---
+
+## Application Layer
+
+**O que fica aqui:** Casos de uso, orquestração de domínio, DTOs de entrada/saída, mapeadores.
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ScheduleApplicationService {
+
+    private final IScheduleRepository repository;  // injetado via interface
+    private final TenantContext tenantContext;
+
+    public ScheduleResponse create(ScheduleRequest request) {
+        var entity = new ScheduleEntity();
+        entity.setId(UUID.randomUUID().toString());
+        entity.setTenantId(tenantContext.getTenantId());
+        entity.setTitle(request.title());
+        entity.setStatus(ScheduleStatus.PENDING);
+        entity.validate();
+
+        var saved = repository.save(entity);
+        return ScheduleMapper.toResponse(saved);
+    }
+}
+```
+
+---
+
+## Infrastructure Layer
+
+**O que fica aqui:** Implementação dos ports (repositórios JPA), entidades JPA, adapters.
+
+```java
+// JPA Entity (separada da Domain Entity)
+@Entity
+@Table(name = "schedule")
+public class ScheduleJpa {
+    @Id
+    private String id;
+    @Column(name = "tenant_id")
+    private String tenantId;
+    private String title;
+    // ...
+}
+
+// Adapter — implementa a interface de domain
+@Repository
+@RequiredArgsConstructor
+public class ScheduleRepositoryAdapter implements IScheduleRepository {
+
+    private final ScheduleSpringDataRepository springRepository;
+    private final TenantContext tenantContext;
+
+    @Override
+    public Optional<ScheduleEntity> findById(String id) {
+        return springRepository
+            .findByIdAndTenantId(id, tenantContext.getTenantId())
+            .map(this::toDomainEntity);
+    }
+}
+```
+
+---
+
+## Presentation Layer
+
+**O que fica aqui:** Controllers REST, validação de entrada, mapeamento request → DTO.
+
+```java
+@RestController
+@RequestMapping("/api/v1/schedules")
+@RequiredArgsConstructor
+public class ScheduleController {
+
+    private final ScheduleApplicationService service;
+
+    @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<ScheduleResponse>> create(
+            @Valid @RequestBody ScheduleRequest request) {
+        var response = service.create(request);
+        return ResponseEntity.status(201)
+            .body(ApiResponse.success(response));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ScheduleResponse>> findById(
+            @PathVariable String id) {
+        var response = service.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+}
+```
+

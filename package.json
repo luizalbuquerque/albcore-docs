@@ -1,0 +1,20 @@
+{
+  "name": "albcore-docs",
+  "version": "1.0.0",
+  "description": "AlbCore Platform Documentation",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "export": "next build && next export"
+  },
+  "dependencies": {
+    "next": "14.2.3",
+    "nextra": "2.13.4",
+    "nextra-theme-docs": "2.13.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
+

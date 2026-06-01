@@ -1,0 +1,103 @@
+---
+title: Padrão de Resposta
+description: Formato padrão ApiResponse<T> usado em todos os endpoints.
+---
+
+# Padrão de Resposta
+
+Todos os endpoints retornam o envelope `ApiResponse<T>`:
+
+## Estrutura
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;        // true = OK, false = erro
+  code: string;            // código semântico
+  message: string;         // mensagem legível
+  data: T | null;          // payload (null em erros)
+  timestamp: string;       // ISO-8601
+}
+```
+
+---
+
+## Resposta de Sucesso
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "Operation completed",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "tenantId": "tenant-abc",
+    "title": "Daily sync",
+    "status": "PENDING",
+    "createdAt": "2026-05-22T14:30:00"
+  },
+  "timestamp": "2026-05-22T14:30:00"
+}
+```
+
+## Resposta de Lista
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "Operation completed",
+  "data": [
+    { "id": "abc", "title": "Item 1" },
+    { "id": "def", "title": "Item 2" }
+  ],
+  "timestamp": "2026-05-22T14:30:00"
+}
+```
+
+## Resposta de Erro
+
+```json
+{
+  "success": false,
+  "code": "VALIDATION_ERROR",
+  "message": "Campo 'title' é obrigatório",
+  "data": null,
+  "timestamp": "2026-05-22T14:30:00"
+}
+```
+
+---
+
+## Códigos HTTP × Código Semântico
+
+| HTTP | `code` | Situação |
+|------|--------|----------|
+| `200` | `SUCCESS` | GET, PUT bem-sucedido |
+| `201` | `CREATED` | POST bem-sucedido |
+| `204` | — | DELETE (sem body) |
+| `400` | `VALIDATION_ERROR` | Bean validation falhou |
+| `400` | `BUSINESS_ERROR` | Regra de negócio violada |
+| `401` | `UNAUTHORIZED` | Token inválido/ausente |
+| `403` | `FORBIDDEN` | Sem permissão |
+| `404` | `NOT_FOUND` | Recurso não encontrado |
+| `409` | `CONFLICT` | Duplicata ou conflito |
+| `500` | `INTERNAL_ERROR` | Erro inesperado |
+
+---
+
+## Implementação Java
+
+```java
+// Sucesso
+return ResponseEntity.ok(ApiResponse.success(response));
+
+// Criação
+return ResponseEntity.status(201).body(ApiResponse.success(response));
+
+// Erro de negócio (GlobalExceptionHandler cuida automaticamente)
+throw new BusinessException("Agendamento já existe para este horário");
+
+// Not found
+throw new ResourceNotFoundException("Schedule", id);
+```
+

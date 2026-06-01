@@ -1,0 +1,105 @@
+---
+title: Autenticação
+description: Como autenticar e usar JWT tokens no AlbCore.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Autenticação
+
+## Fluxo
+
+```
+1. POST /api/v1/auth/login    →  recebe JWT token
+2. Usar token nas demais requests via Authorization: Bearer {token}
+```
+
+---
+
+## Login
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@empresa.com",
+    "password": "senha123",
+    "tenantId": "tenant-abc"
+  }'
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn": 86400,
+    "tokenType": "Bearer",
+    "user": {
+      "id": "user-123",
+      "email": "admin@empresa.com",
+      "roles": ["ROLE_ADMIN"]
+    }
+  },
+  "timestamp": "2026-05-22T14:00:00"
+}
+```
+
+---
+
+## Usando o Token
+
+<Callout type="warning">
+  Toda requisição autenticada precisa dos dois headers: `Authorization` **e** `X-Tenant-Id`.
+</Callout>
+
+```bash
+curl -X GET http://localhost:8080/api/v1/schedules \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "X-Tenant-Id: tenant-abc"
+```
+
+---
+
+## Headers Obrigatórios
+
+| Header | Formato | Exemplo |
+|--------|---------|---------|
+| `Authorization` | `Bearer {JWT}` | `Bearer eyJhbGci...` |
+| `X-Tenant-Id` | String | `tenant-abc-123` |
+| `Content-Type` | Para POST/PUT | `application/json` |
+
+---
+
+## Refresh Token
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Authorization: Bearer {token_expirado_ou_valido}" \
+  -H "X-Tenant-Id: tenant-abc"
+```
+
+---
+
+## Logout
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -H "Authorization: Bearer {token}" \
+  -H "X-Tenant-Id: tenant-abc"
+```
+
+> O token é adicionado ao blacklist (Redis) por `expiresIn` segundos.
+
+---
+
+## Erros de Autenticação
+
+| Código HTTP | Código | Descrição |
+|-------------|--------|-----------|
+| `401` | `UNAUTHORIZED` | Token ausente, inválido ou expirado |
+| `400` | `MISSING_TENANT` | Header `X-Tenant-Id` ausente |
+| `403` | `FORBIDDEN` | Token válido, mas sem permissão para o recurso |
+

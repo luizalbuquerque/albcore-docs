@@ -1,0 +1,95 @@
+---
+title: Docker
+description: Containerização do AlbCore com Docker multi-stage.
+---
+
+import { Steps, Callout } from 'nextra/components'
+
+# Docker
+
+## Dockerfile Multi-stage
+
+O AlbCore usa build em dois estágios para produzir imagem mínima:
+
+```dockerfile
+# Estágio 1: Build com Maven
+FROM eclipse-temurin:26-jdk AS builder
+WORKDIR /app
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
+RUN ./mvnw dependency:go-offline -q
+COPY src ./src
+RUN ./mvnw package -DskipTests -q
+
+# Estágio 2: Runtime mínimo
+FROM eclipse-temurin:26-jre AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+---
+
+## Serviços no Compose
+
+| Serviço | Porta Host | Imagem | Propósito |
+|---------|-----------|--------|-----------|
+| `app` | 8080 | `albcore:latest` | API Spring Boot |
+| `postgres` | 5432 | `postgres:16` | Banco principal |
+| `redis` | 6379 | `redis:7` | Cache/Sessões |
+| `rabbitmq` | 5672 / 15672 | `rabbitmq:3.12-management` | Message broker |
+
+---
+
+## Comandos Rápidos
+
+<Steps>
+
+### Copiar variáveis de ambiente
+
+```bash
+cp infra/env/.env.dev .env
+```
+
+### Subir ambiente de desenvolvimento
+
+```bash
+./docker-compose.sh dev up
+# ou diretamente:
+docker compose -f infra/docker/docker-compose.dev.yaml up -d
+```
+
+### Ver logs
+
+```bash
+docker compose -f infra/docker/docker-compose.dev.yaml logs -f app
+```
+
+### Parar tudo
+
+```bash
+./docker-compose.sh dev down
+```
+
+</Steps>
+
+---
+
+## Build da Imagem
+
+```bash
+# Build local
+docker build -f infra/docker/Dockerfile -t albcore:latest .
+
+# Build + tag para registry
+docker build -f infra/docker/Dockerfile \
+  -t registry.albuquerquetech.com.br/albcore:v0.1 .
+docker push registry.albuquerquetech.com.br/albcore:v0.1
+```
+
+<Callout type="warning">
+  Nunca use `:latest` em produção — sempre use uma tag de versão específica.
+</Callout>
+

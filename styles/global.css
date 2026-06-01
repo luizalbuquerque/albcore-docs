@@ -1,0 +1,32 @@
+/* Customizações globais do AlbCore Docs */
+
+:root {
+  --primary-hue: 213;
+}
+
+/* Título da home maior */
+.nextra-hero h1 {
+  font-size: 3rem !important;
+}
+
+/* Destaque nos blocos de código */
+.nextra-code-block pre {
+  border-radius: 0.5rem;
+}
+
+/* Badges inline */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.badge-green  { background: #dcfce7; color: #15803d; }
+.badge-yellow { background: #fef9c3; color: #a16207; }
+.badge-red    { background: #fee2e2; color: #b91c1c; }
+.badge-gray   { background: #f3f4f6; color: #374151; }
+

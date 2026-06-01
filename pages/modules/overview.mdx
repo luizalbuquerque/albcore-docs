@@ -1,0 +1,79 @@
+---
+title: Visão dos Módulos
+description: Todos os módulos reutilizáveis do AlbCore e seus status.
+---
+
+import { Callout } from 'nextra/components'
+
+# Módulos do AlbCore
+
+Os módulos são **blocos funcionais reutilizáveis** ativados por **Feature Flag** por tenant.
+Cada produto white label escolhe quais módulos ativar.
+
+---
+
+## Status dos Módulos
+
+| Módulo | Status | Versão | Endpoints | Descrição |
+|--------|--------|--------|-----------|-----------|
+| **scheduling** | 🔵 Em desenvolvimento | — | `/api/v1/schedules` | Agendamentos e execuções periódicas |
+| **marketplace** | ⚪ Planejado | — | `/api/v1/marketplace` | Catálogo B2B, ofertas, negociações |
+| **payment** | ⚪ Planejado | — | `/api/v1/payments` | Pagamentos, cobranças, split |
+| **crm** | ⚪ Planejado | — | `/api/v1/crm` | Clientes, contatos, funil |
+| **workflow** | ⚪ Planejado | — | `/api/v1/workflows` | Fluxos de trabalho customizáveis |
+| **notification** | ⚪ Planejado | — | `/api/v1/notifications` | Email, Push, SMS, webhook |
+| **document** | ⚪ Planejado | — | `/api/v1/documents` | Gestão documental, assinatura |
+| **bidding** | ⚪ Planejado | — | `/api/v1/bidding` | Licitações, cotações, propostas |
+
+<Callout type="info">
+  🔵 Em desenvolvimento · 🟢 Estável · 🟡 Beta · ⚪ Planejado
+</Callout>
+
+---
+
+## Core Domains (sempre ativos)
+
+| Domínio | Status | Descrição |
+|---------|--------|-----------|
+| **tenant** | 🔵 Em desenvolvimento | Gestão de tenants, onboarding |
+| **identity** | 🔵 Em desenvolvimento | Usuários, roles, autenticação |
+| **billing** | 🔵 Em desenvolvimento | Planos, assinaturas, cobranças |
+| **product** | 🟢 Parcial | Feature flags, templates de produto |
+
+---
+
+## Como Ativar um Módulo
+
+```java
+// Verificação de feature flag no service
+@Service
+public class MarketplaceApplicationService {
+
+    @Autowired
+    private FeatureFlagService featureFlags;
+
+    @Autowired
+    private TenantContext tenantContext;
+
+    public MarketplaceResponse create(...) {
+        String tenantId = tenantContext.getTenantId();
+
+        if (!featureFlags.isEnabled("MODULE_MARKETPLACE", tenantId)) {
+            throw new ForbiddenException("Módulo Marketplace não ativo neste plano");
+        }
+        // ...
+    }
+}
+```
+
+---
+
+## Combinações de Produto (Exemplos)
+
+| Produto | Módulos Ativos |
+|---------|---------------|
+| **Produto A** (B2B Simples) | marketplace, payment, notification |
+| **Produto B** (Gestão) | crm, workflow, document, scheduling |
+| **Produto C** (Licitações) | bidding, document, notification |
+| **Enterprise** | Todos |
+
