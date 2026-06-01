@@ -1,0 +1,35 @@
+---
+title: AlbCore Platform
+description: Plataforma SaaS whitelabel com arquitetura modular, multi-tenancy e Clean Architecture.
+---
+
+import { Cards, Card, Callout } from 'nextra/components'
+
+# ⬡ AlbCore Platform
+
+**AlbCore** é uma plataforma **SaaS whitelabel** construída pela [Albuquerque Tech](https://albuquerquetech.com.br) como motor central para produtos verticais B2B.
+
+<Callout type="info">
+  Versão atual: **v0.1** · Java 21 · Spring Boot 3.4.5 · PostgreSQL 16 · Redis 7
+</Callout>
+
+---
+
+## O que é o AlbCore?
+
+O AlbCore é um **Modular Monolith** com isolamento por tenant, pronto para ser customizado em diferentes produtos (white label). Cada produto herda toda a infraestrutura da plataforma e ativa apenas os módulos necessários via **Feature Flags**.
+
+---
+
+## Explore a Documentação
+
+<Cards>
+  <Card title="🗺️ Introdução" href="/introduction/overview" />
+  <Card title="📦 Módulos" href="/modules/overview" />
+  <Card title="🔌 API Reference" href="/api-reference/authentication" />
+</Cards>
+
+<Callout type="warning">
+  **Área interna** (Arquitetura, Deploy & Infra, Contribuindo) é restrita ao time e
+  exige autenticação: [acessar área interna](https://api-core.albuquerquetech.com.br/documentation/internal).
+</Callout>

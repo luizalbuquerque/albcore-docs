@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
+    "build:split": "node scripts/build-split.mjs",
     "start": "next start -p 3001",
     "export": "next build && next export"
   },

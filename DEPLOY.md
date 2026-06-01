@@ -1,34 +1,54 @@
 # Deploy — AlbCore Docs
 
-Documentação da plataforma (Nextra / Next.js static export) servida em:
+Documentação da plataforma (Nextra / Next.js static export), servida em dois
+níveis no mesmo domínio/porta da API (o Nginx roteia por path — sem container):
 
-**https://api-core.albuquerquetech.com.br/documentation**
+| Área        | URL                                                            | Acesso     |
+|-------------|----------------------------------------------------------------|------------|
+| **Pública** | https://api-core.albuquerquetech.com.br/documentation          | Aberto     |
+| **Interna** | https://api-core.albuquerquetech.com.br/documentation/internal | Basic Auth |
 
-Mesma porta/domínio da API — o Nginx roteia o path `/documentation`
-para os arquivos estáticos. Não precisa de container nem porta extra.
+- **Pública:** Início, Introdução, API Reference, Módulos.
+- **Interna:** site completo (inclui Arquitetura, Deploy & Infra, Contribuindo, Roadmap).
 
-## Como funciona
+## Como funciona (dois builds isolados)
 
-1. `next build` com `output: 'export'` gera HTML estático em `out/`.
-2. O `basePath` (`/documentation`) é injetado via env `DOCS_BASE_PATH` no
-   build, então todos os assets e links já saem prefixados.
-3. O pipeline (`.github/workflows/deploy.yml`) faz `rsync` de `out/` para
-   `/var/www/albcore-docs` na VPS e recarrega o Nginx.
+`npm run build:split` (`scripts/build-split.mjs`) gera **dois** exports estáticos:
+
+1. `out-internal/` — site completo, `basePath=/documentation/internal`.
+2. `out-public/` — apenas seções públicas, `basePath=/documentation`.
+
+> **Por que dois builds e não só senha no path?** No Next.js o conteúdo das
+> páginas é embutido nos chunks JS e no índice de busca (`nextra-data-*.json`).
+> Proteger só o HTML deixaria o conteúdo interno vazar pelos assets públicos.
+> Como o build público **não contém** nenhuma página interna, não há vazamento.
+> O CI inclui um passo que falha se algo interno aparecer em `out-public/`.
+
+O pipeline (`.github/workflows/deploy.yml`) faz `rsync`:
+- `out-public/`   → `/var/www/albcore-docs`          (público)
+- `out-internal/` → `/var/www/albcore-docs-internal` (Basic Auth)
 
 ## Pré-requisitos (uma vez só)
 
 ### 1. Secrets no repositório GitHub
 
-Em **Settings → Secrets and variables → Actions**, adicione (os mesmos
-nomes usados no `albcore-api`):
+Em **Settings → Secrets and variables → Actions**, adicione (mesmos nomes do `albcore-api`):
 
-| Secret         | Valor                         |
-|----------------|-------------------------------|
-| `VPS_HOST`     | `191.101.18.194`              |
-| `VPS_USER`     | usuário SSH da VPS            |
-| `VPS_PASSWORD` | senha SSH da VPS              |
+| Secret         | Valor                |
+|----------------|----------------------|
+| `VPS_HOST`     | `191.101.18.194`     |
+| `VPS_USER`     | usuário SSH da VPS   |
+| `VPS_PASSWORD` | senha SSH da VPS     |
 
-### 2. Bloco Nginx na VPS
+### 2. Credenciais da área interna (Basic Auth) na VPS
+
+```bash
+HASH=$(openssl passwd -apr1 'SUA_SENHA')
+echo "albcore:$HASH" > /etc/nginx/.htpasswd-albcore
+chmod 640 /etc/nginx/.htpasswd-albcore && chown root:www-data /etc/nginx/.htpasswd-albcore
+```
+
+### 3. Blocos Nginx na VPS
 
 Adicione o conteúdo de `infra/nginx/albcore-docs.conf` dentro do
 `server { ... }` que já atende `api-core.albuquerquetech.com.br`, depois:
@@ -39,20 +59,20 @@ nginx -t && systemctl reload nginx
 
 ## Deploy
 
-Automático: todo push na branch `main` dispara o build + deploy.
+Automático: todo push na branch `main` dispara build + deploy.
 Manual: aba **Actions → Deploy Docs → Run workflow**.
 
 ## Desenvolvimento local
 
 ```bash
 npm install
-npm run dev      # http://localhost:3001  (sem basePath)
+npm run dev      # http://localhost:3001  (site completo, sem basePath)
 ```
 
-Para testar exatamente como em produção (com `/documentation`):
+Para reproduzir os dois builds de produção:
 
 ```bash
-DOCS_BASE_PATH=/documentation npm run build
-npx serve out -l 3001
-# acesse http://localhost:3001/documentation/
+npm run build:split
+npx serve out-public   -l 3001   # http://localhost:3001/documentation/
+npx serve out-internal -l 3002   # http://localhost:3002/documentation/internal/
 ```

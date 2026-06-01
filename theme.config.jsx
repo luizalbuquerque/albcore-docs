@@ -1,5 +1,4 @@
 import { useRouter } from 'next/router'
-import Link from 'next/link'
 import { useConfig } from 'nextra-theme-docs'
 
 export default {
@@ -71,14 +70,7 @@ export default {
   },
   banner: {
     key: 'albcore-v0.1',
-    text: (
-      <span>
-        🚀 AlbCore v0.1 em desenvolvimento ativo — acompanhe o{' '}
-        <Link href="/roadmap" style={{ textDecoration: 'underline' }}>
-          Roadmap
-        </Link>
-      </span>
-    ),
+    text: <span>🚀 AlbCore v0.1 em desenvolvimento ativo</span>,
   },
 }
 
