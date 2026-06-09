@@ -1,0 +1,160 @@
+# Quilometragem & Estacionamento
+
+## Quilometragem por Dia
+
+Retorna a quilometragem rodada por dia (somente dados de dias alternados).
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_runMileage.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Não | Placa(s), separadas por `,` |
+| `begintime` | string | Sim | Início (`yyyy-MM-dd`) |
+| `endtime` | string | Sim | Fim (`yyyy-MM-dd`) |
+| `currentPage` | number | Não | Página |
+| `pageRecords` | number | Não | Registros por página |
+
+### Exemplo
+
+```
+GET /StandardApiAction_runMileage.action?jsession=xxx&vehiIdno=ABC1234&begintime=2026-05-01&endtime=2026-05-28&currentPage=1&pageRecords=50
+```
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehIdno` | string | Placa |
+| `mile` | number | Quilometragem (metros) |
+| `sTimeStr` | string | Hora de início (online) |
+| `eTimeStr` | string | Hora de fim (offline) |
+| `ttime` | number | Tempo online (segundos) |
+
+```json
+{
+  "result": 0,
+  "infos": [
+    {
+      "vehIdno": "ABC1234",
+      "mile": 85200,
+      "sTimeStr": "2026-05-20 06:30:13",
+      "eTimeStr": "2026-05-20 18:45:49",
+      "ttime": 44136
+    }
+  ],
+  "pagination": { "totalPages": 1, "currentPage": 1, "totalRecords": 1 }
+}
+```
+
+---
+
+## Relatório Detalhado de Quilometragem
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getOilTrackDetail.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Não | Placa(s) |
+| `begintime` | string | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | string | Sim | Fim |
+| `toMap` | number | Não | Conversão de coordenadas |
+| `byOil` | number | Não | `1` = relatório de combustível; outro = quilometragem |
+| `currentPage` | number | Não | Página |
+| `pageRecords` | number | Não | Registros por página |
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehiIdno` | string | Placa |
+| `companyName` | string | Empresa |
+| `liCheng` | number | Km total (metros) |
+| `youLiang` | number | Consumo total (÷ 100 → litros) |
+| `bTimeStr` | string | Início do trecho |
+| `eTimeStr` | string | Fim do trecho |
+| `startPosition` | string | Endereço de partida |
+| `endPosition` | string | Endereço de chegada |
+
+---
+
+## Relatório de Estacionamento
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_parkDetail.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Não | Placa(s) |
+| `begintime` | string | Sim | Início |
+| `endtime` | string | Sim | Fim |
+| `parkTime` | number | Sim | Tempo mínimo de parada (segundos) para considerar estacionado |
+| `toMap` | number | Sim | `1`=Google, `2`=Baidu |
+| `geoaddress` | number | Não | `1` = resolver endereço |
+| `currentPage` | number | Não | Página |
+| `pageRecords` | number | Não | Registros por página |
+
+### Exemplo
+
+```
+GET /StandardApiAction_parkDetail.action?jsession=xxx&vehiIdno=ABC1234&begintime=2026-05-01 00:00:00&endtime=2026-05-28 23:59:59&parkTime=300&toMap=2&currentPage=1&pageRecords=50
+```
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehIdno` | string | Placa |
+| `companyName` | string | Empresa |
+| `startPosition` | string | Endereço do estacionamento |
+| `armTimeStart` | number | Início da parada (timestamp ms) |
+| `armTimeEnd` | number | Fim da parada (timestamp ms) |
+| `alarmTotalTime` | number | Duração total da parada (segundos) |
+
+---
+
+## Lista de Última Localização
+
+Retorna a posição mais recente de veículos.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_vehicleStatus.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Não | Placa(s) |
+| `toMap` | number | Não | Conversão coords |
+| `geoaddress` | number | Não | `1` = endereço |
+| `currentPage` | number | Não | Página |
+| `pageRecords` | number | Não | Registros por página |
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vi` | string | Placa |
+| `tm` | number | Timestamp (ms) |
+| `jd` | number | Longitude |
+| `wd` | number | Latitude |
+| `pos` | string | Endereço resolvido |

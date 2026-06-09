@@ -1,0 +1,84 @@
+# Autenticação
+
+## Login
+
+Autentica o usuário e retorna um `jsession` válido para as demais chamadas.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_login.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `account` | string | Sim | Nome de usuário |
+| `password` | string | Sim | Senha |
+
+### Exemplo de Requisição
+
+```
+GET http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123
+```
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "jsession": "cf6b70a3-c82b-4392-8ab6-bbddce336222",
+  "account_name": "ctec",
+  "JSESSIONID": "cf6b70a3-c82b-4392-8ab6-bbddce336222"
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `jsession` | string | Token de sessão (usar em todas as chamadas seguintes) |
+| `account_name` | string | Nome da conta autenticada |
+
+### Login no Painel Web
+
+Após obter o `jsession`, é possível acessar o painel web diretamente:
+
+```
+http://39.100.229.38:8088/808gps/index.html?userSession={jsession}&clientLogin=2
+```
+
+| Parâmetro | Descrição |
+|-----------|-----------|
+| `clientLogin=1` | Sem vídeo |
+| `clientLogin=2` | Com vídeo e localização |
+| `menuIds=25,26` | Menus específicos (25=vídeo, 26=playback) |
+
+---
+
+## Logout
+
+Encerra a sessão do usuário.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_logout.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token de sessão |
+
+### Exemplo
+
+```
+GET http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222
+```
+
+### Resposta
+
+```json
+{
+  "result": 0
+}
+```

@@ -1,0 +1,169 @@
+# Organização, Roles & Contas
+
+Gerenciamento hierárquico de empresas, perfis de acesso e contas de usuário.
+
+---
+
+## Empresas (Organizações)
+
+### Criar / Editar Empresa
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addCompany.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `companyName` | string | Sim | Nome da empresa |
+| `parentId` | number | Não | ID da empresa-pai (hierarquia) |
+
+### Consultar Empresa
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_findCompany.action` |
+| **Método** | GET / POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `companyId` | number | Não | ID da empresa (vazio = todas) |
+
+### Excluir Empresa
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_deleteCompany.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `companyId` | number | Sim | ID da empresa |
+
+---
+
+## Roles (Perfis de Acesso)
+
+### Criar / Editar Role
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addRole.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `roleName` | string | Sim | Nome do perfil |
+| `permissions` | string | Não | Lista de permissões |
+
+### Consultar Roles
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_findRole.action` |
+| **Método** | GET / POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+
+### Excluir Role
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_deleteRole.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `roleId` | number | Sim | ID do perfil |
+
+---
+
+## Contas de Usuário
+
+### Criar / Editar Conta
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addAccount.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `account` | string | Sim | Nome de login |
+| `password` | string | Sim | Senha |
+| `companyId` | number | Sim | Empresa vinculada |
+| `roleId` | number | Não | Perfil de acesso |
+
+### Consultar Contas
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_findAccount.action` |
+| **Método** | GET / POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `companyId` | number | Não | Filtrar por empresa |
+
+### Excluir Conta
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_deleteAccount.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `accountId` | number | Sim | ID da conta |
+
+---
+
+## Autorização de Dispositivos
+
+### Consultar Autorizações
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getAuthorization.action` |
+| **Método** | GET / POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `accountId` | number | Sim | ID da conta |
+
+### Adicionar Autorização
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addAuthorization.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `accountId` | number | Sim | Conta |
+| `devIdnos` | string | Sim | Dispositivos a autorizar (separados por `,`) |
+
+### Remover Autorização
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_delAuthorization.action` |
+| **Método** | POST |
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `accountId` | number | Sim | Conta |
+| `devIdnos` | string | Sim | Dispositivos a desautorizar |

@@ -1,0 +1,118 @@
+# Alarmes
+
+## Consultar Alarmes Históricos (Paginado)
+
+Retorna alarmes de um dispositivo/veículo em um período.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_queryAlarmDetail.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Não | Dispositivo(s), separados por `,` |
+| `vehiIdno` | string | Não | Placa(s) — fallback se `devIdno` vazio |
+| `begintime` | string | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | string | Sim | Fim (máx. 90 dias de intervalo) |
+| `armType` | string | Sim | Tipo(s) de alarme, separados por `,` |
+| `handle` | number | Não | `0`=não tratado, `1`=tratado, vazio=todos |
+| `currentPage` | number | Não | Página (default: 1) |
+| `pageRecords` | number | Não | Registros por página (default: 10) |
+| `toMap` | number | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | number | Não | `1` = resolver endereço |
+
+### Exemplo
+
+```
+GET /StandardApiAction_queryAlarmDetail.action?jsession=xxx&devIdno=500000&begintime=2026-05-01 00:00:00&endtime=2026-05-28 23:59:59&armType=2,9,11&currentPage=1&pageRecords=50
+```
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `atp` | number | Tipo do alarme |
+| `did` | string | Dispositivo |
+| `vid` | string | Placa |
+| `stm` | number | Timestamp início (UTC ms) |
+| `etm` | number | Timestamp fim (UTC ms) |
+| `guid` | string | ID único do alarme |
+| `hd` | number | `0`=não tratado, `1`=tratado |
+| `hdu` | string | Usuário que tratou |
+| `hdc` | string | Conteúdo do tratamento |
+| `hdt` | string | Data do tratamento |
+| `img` | string | URLs de imagens (separadas por `;`) |
+| `slng`/`slat` | number | Coordenadas início |
+| `elng`/`elat` | number | Coordenadas fim |
+| `ssp`/`esp` | number | Velocidade início/fim (÷ 10) |
+| `sps`/`eps` | string | Endereço início/fim |
+| `p1`–`p4` | number | Parâmetros do alarme (tipo-específico) |
+
+---
+
+## Alarmes em Tempo Real
+
+Retorna os alarmes ativos de um dispositivo **online**.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_vehicleAlarm.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `DevIDNO` | string | Não | Número do dispositivo |
+| `toMap` | number | Não | Conversão de coordenadas |
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "alarmlist": [
+    {
+      "DevIDNO": "500000",
+      "type": 48,
+      "guid": "C0C580F6E5094FDF8710289627676075",
+      "hd": 0,
+      "time": "2026-05-28 18:20:48",
+      "Gps": {
+        "lng": 113827278,
+        "lat": 22649633,
+        "sp": 540,
+        "mlng": "113.838835",
+        "mlat": "22.652409"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Tipos de Alarme Comuns
+
+| Código | Descrição |
+|--------|-----------|
+| 2 | Excesso de velocidade |
+| 9 | Entrada em área proibida |
+| 11 | Saída de área (geofence) |
+| 14 | Fadiga ao volante |
+| 15 | Colisão |
+| 16 | Capotamento |
+| 17 | Porta aberta em movimento |
+| 20 | Corte de combustível |
+| 22 | Pânico (SOS) |
+| 23 | Bateria fraca |
+| 48 | Alarme ADAS (colisão frontal) |
+| 49 | Desvio de faixa (ADAS) |
+| 50 | Fadiga (DSM) |
+| 51 | Fumando (DSM) |
+| 52 | Celular ao volante (DSM) |

@@ -1,0 +1,96 @@
+# Códigos de Erro
+
+## Erros da Plataforma Web
+
+Retornados no campo `result` da resposta JSON.
+
+| Código | Descrição |
+|--------|-----------|
+| 0 | ✓ Sucesso |
+| 1 | Usuário ou senha incorretos |
+| 2 | Usuário ou senha incorretos |
+| 3 | Usuário desabilitado |
+| 4 | Usuário expirado |
+| 5 | Sessão não existe (jsession inválido/expirado) |
+| 6 | Exceção do sistema |
+| 7 | Parâmetro de requisição incorreto |
+| 8 | Sem permissão para operar este veículo/dispositivo |
+| 9 | Data inicial não pode ser maior que a final |
+| 10 | Período excede o limite permitido |
+| 11 | Tarefa de download de vídeo já existe |
+| 12 | Conta já existe |
+| 13 | Sem autoridade para esta operação |
+| 14 | Limite de dispositivos atingido |
+| 15 | Dispositivo já existe |
+| 16 | Veículo já existe |
+| 17 | Dispositivo já está em uso |
+| 18 | Veículo não existe |
+| 19 | Dispositivo não existe |
+| 20 | Equipamento não pertence à empresa atual |
+| 21 | Quantidade de dispositivos excede o registro |
+| 24 | Exceção de conexão de rede |
+| 25 | Nome da regra já existe |
+| 26 | Regra não existe |
+| 27 | Informação não existe |
+| 28 | Sessão de usuário já existe |
+| 29 | Empresa não existe |
+| 32 | Equipamento não está online |
+| 34 | Login único — usuário já logado em outra sessão |
+
+---
+
+## Erros do Servidor de Mídia (CMS)
+
+Quando a resposta contém `"cmsserver": 1`, os códigos de erro referem-se ao servidor de mídia/vídeo:
+
+| Código | Descrição |
+|--------|-----------|
+| 2 | Sem permissão do usuário |
+| 3 | Parâmetro de requisição incorreto |
+| 4 | Erro de operação no banco de dados |
+| 5 | Informação não existe |
+| 6 | Erro desconhecido |
+| 7 | Nome já em uso |
+| 21 | Dispositivo não existe |
+| 22 | Sem resposta do dispositivo |
+| 23 | Equipamento não está online |
+| 26 | Conexão com dispositivo interrompida |
+| 27 | Caminho de armazenamento indefinido |
+
+---
+
+## Boas Práticas de Tratamento
+
+```js
+async function callApi(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  
+  if (data.result !== 0) {
+    switch (data.result) {
+      case 5:
+        // Sessão expirada — refazer login
+        await reLogin();
+        break;
+      case 8:
+        // Sem permissão — verificar autorização do dispositivo
+        break;
+      case 32:
+        // Dispositivo offline — informar ao usuário
+        break;
+      default:
+        console.error(`Erro ${data.result}`);
+    }
+    return null;
+  }
+  
+  return data;
+}
+```
+
+---
+
+## HTTP Status Codes
+
+A API sempre retorna **HTTP 200** mesmo em caso de erro lógico.
+O tratamento de erro deve ser feito pelo campo `result` do JSON, **não** pelo status HTTP.

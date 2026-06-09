@@ -1,0 +1,143 @@
+# Vídeo ao Vivo
+
+## Visão Geral
+
+A plataforma suporta streaming de vídeo em tempo real dos dispositivos embarcados.
+Há múltiplas formas de consumir o vídeo:
+
+| Método | Uso recomendado |
+|--------|----------------|
+| **URL direta (HTML)** | Embeber em iframe ou abrir em nova aba |
+| **HLS (.m3u8)** | Players móveis e web modernos |
+| **Player H5 (JS SDK)** | Integração customizada com controle total |
+| **RTSP / RTMP** | Aplicações desktop, VLC, OBS |
+
+---
+
+## Vídeo via URL Direta
+
+Abre uma página completa de vídeo ao vivo (funciona em PC e mobile).
+
+```
+http://39.100.229.38:8088/808gps/open/player/video.html?lang=en&devIdno={DEVICE}&jsession={TOKEN}
+```
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Não* | Token (alternativa: `account`+`password`) |
+| `account` | string | Não* | Usuário (se `jsession` vazio) |
+| `password` | string | Não* | Senha |
+| `devIdno` | string | Não | Número do dispositivo |
+| `vehiIdno` | string | Não | Placa (fallback se `devIdno` vazio) |
+| `channel` | number | Não | Canais a exibir (máx. 9 janelas) |
+| `stream` | number | Não | `0`=main stream, `1`=sub stream (default) |
+| `close` | number | Não | Auto-fechar após N segundos |
+| `lang` | string | Não | `en` ou `zh` |
+
+### Exemplos
+
+```bash
+# Com jsession
+http://39.100.229.38:8088/808gps/open/player/video.html?lang=en&devIdno=500000&jsession=xxx
+
+# Com usuário/senha + auto-close em 60s
+http://39.100.229.38:8088/808gps/open/player/video.html?lang=en&vehiIdno=ABC1234&account=ctec&password=senha&close=60
+
+# Multi-canal (3 câmeras)
+http://39.100.229.38:8088/808gps/open/player/video.html?lang=en&vehiIdno=ABC1234&account=ctec&password=senha&channel=3&chns=0,1,2
+```
+
+---
+
+## Streaming HLS (Mobile / Web)
+
+O streaming HLS permite integração com qualquer player que suporte `.m3u8`.
+
+### URL do Stream
+
+```
+http://{MEDIA_SERVER_IP}:{PORT}/hls/{requestType}_{deviceNo}_{channel}_{streamType}.m3u8?jsession={TOKEN}
+```
+
+**Servidor de mídia padrão:** `http://39.100.229.38:6604`
+
+| Componente | Descrição |
+|------------|-----------|
+| `requestType` | `1` = vídeo |
+| `deviceNo` | Número do dispositivo |
+| `channel` | Canal (0, 1, 2...) |
+| `streamType` | `0` = main stream, `1` = sub stream |
+
+### Exemplo
+
+```html
+<video controls width="640" height="360">
+  <source 
+    src="http://39.100.229.38:6604/hls/1_500000_0_1.m3u8?jsession=xxx" 
+    type="application/x-mpegURL" 
+  />
+</video>
+```
+
+---
+
+## Player H5 (JavaScript SDK)
+
+Para integração avançada com controle de janelas, intercom e playback.
+
+### Setup
+
+```html
+<script src="http://39.100.229.38:8088/808gps/open/player/js/cmsv6player.min.js"></script>
+<div id="cmsv6flash"></div>
+```
+
+> O arquivo `libcmsv6decode.wasm` deve estar no **diretório raiz** do web server.
+
+### Inicialização
+
+```js
+const player = new Cmsv6Player({
+  domId: "cmsv6flash",
+  isVodMode: false,     // true para playback com barra de progresso
+  width: 800,
+  height: 600,
+  lang: "en"
+});
+
+// Aguardar inicialização
+function onReady() {
+  if (!player.setWindowNum) {
+    setTimeout(onReady, 50);
+    return;
+  }
+  player.setWindowNum(4);                              // 4 janelas
+  player.setServerInfo("39.100.229.38", "6605");      // servidor de login
+}
+onReady();
+```
+
+### Reproduzir Vídeo ao Vivo
+
+```js
+player.startVideo(0, "jsession-token", "500000", 0, 1, true);
+// Params: janela, jsession, devIdno, canal, stream(0=main,1=sub), autoplay
+```
+
+### Parar / Resetar
+
+```js
+player.stopVideo(0);   // para a janela 0
+player.reSetVideo(0);  // reseta
+```
+
+### Eventos de Callback
+
+```js
+function onTtxVideoMsg(index, type) {
+  // type: "start", "stop", "play", "paus", "select", "full", "norm"
+  console.log(`Janela ${index}: ${type}`);
+}
+```

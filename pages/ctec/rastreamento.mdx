@@ -1,0 +1,105 @@
+# Rastreamento (Histórico de Trajeto)
+
+## Consultar Trajeto do Dispositivo
+
+Retorna o histórico de posições GPS de um dispositivo em um período, com paginação.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_queryTrackDetail.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token de sessão |
+| `devIdno` | string | Sim | Número do dispositivo |
+| `begintime` | string | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | string | Sim | Fim (`yyyy-MM-dd HH:mm:ss`) |
+| `currentPage` | number | Não | Página atual (se vazio, sem paginação) |
+| `pageRecords` | number | Não | Registros por página |
+| `toMap` | number | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | number | Não | `1` = resolver endereço |
+| `distance` | number | Não | Filtro de distância mínima (km) |
+| `parkTime` | number | Não | Filtro de tempo de parada (segundos) |
+
+### Exemplo de Requisição
+
+```
+GET /StandardApiAction_queryTrackDetail.action?jsession=xxx&devIdno=500000&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59&currentPage=1&pageRecords=100&toMap=1
+```
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `tracks` | array | Lista de pontos GPS |
+| `pagination.totalPages` | number | Total de páginas |
+| `pagination.currentPage` | number | Página atual |
+| `pagination.totalRecords` | number | Total de registros |
+
+### Campos de cada ponto em `tracks[]`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | DevIdno |
+| `lng` | number | Longitude (÷ 1.000.000) |
+| `lat` | number | Latitude (÷ 1.000.000) |
+| `sp` | number | Velocidade (÷ 10 → km/h) |
+| `gt` | string | Hora GPS |
+| `hx` | number | Direção (graus) |
+| `mlng` | string | Longitude no mapa |
+| `mlat` | string | Latitude no mapa |
+| `pk` | number | Tempo estacionado (seg) |
+| `lc` | number | Quilometragem acumulada (metros) |
+| `yl` | number | Combustível (÷ 100 → litros) |
+| `s1`–`s4` | number | Bits de status |
+| `t1`–`t4` | number | Temperaturas |
+
+### Exemplo de Resposta
+
+```json
+{
+  "result": 0,
+  "tracks": [
+    {
+      "id": "500000",
+      "lng": 113921858,
+      "lat": 22568745,
+      "sp": 520,
+      "gt": "2026-05-01 08:15:30",
+      "hx": 137,
+      "mlng": "113.926720",
+      "mlat": "22.565703",
+      "pk": 0,
+      "lc": 161446267,
+      "yl": 101
+    }
+  ],
+  "pagination": {
+    "totalPages": 42,
+    "currentPage": 1,
+    "pageRecords": 100,
+    "totalRecords": 4180,
+    "hasNextPage": true
+  }
+}
+```
+
+---
+
+## Replay de Trajeto (Mapa)
+
+É possível abrir um mapa de replay integrado:
+
+```
+http://39.100.229.38:8088/808gps/open/trackReplay/Track.html?vehiIdno=ABC1234&jsession=xxx&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59
+```
+
+| Parâmetro | Obrigatório | Descrição |
+|-----------|-------------|-----------|
+| `jsession` | Sim | Token |
+| `vehiIdno` | Sim | Placa do veículo |
+| `begintime` | Sim | Início do período |
+| `endtime` | Sim | Fim do período |

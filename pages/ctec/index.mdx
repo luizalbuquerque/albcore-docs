@@ -1,0 +1,77 @@
+# CTEC — Plataforma de Rastreamento
+
+Documentação da API de rastreamento veicular utilizada pelo cliente **CTEC**. 
+A plataforma é baseada no protocolo **808GPS (CMSV6)** e oferece rastreamento em tempo real,
+gerenciamento de alarmes, vídeo ao vivo, controle remoto de veículos e relatórios.
+
+## Base URL
+
+```
+http://39.100.229.38:8088
+```
+
+## Autenticação
+
+Todas as requisições (exceto login) exigem o parâmetro `jsession`, obtido ao fazer login.
+
+```
+GET /StandardApiAction_login.action?account=SEU_USER&password=SUA_SENHA
+→ { "result": 0, "jsession": "uuid-aqui" }
+```
+
+Após obter o `jsession`, passe-o como query parameter em toda requisição:
+
+```
+?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222
+```
+
+## Formato de Resposta
+
+Todas as respostas são **JSON** com encoding **UTF-8**.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `result` | number | `0` = sucesso; outro valor = erro (ver [Códigos de Erro](/ctec/codigos-erro)) |
+| `callback` | string | Presente quando `callback` é enviado na requisição (JSONP) |
+
+## Parâmetros Comuns
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Session ID retornado pelo login |
+| `callback` | string | Não | Nome da função JSONP para chamadas cross-domain |
+
+## Módulos Disponíveis
+
+| Módulo | Descrição |
+|--------|-----------|
+| [Autenticação](/ctec/autenticacao) | Login e logout |
+| [Veículos & GPS](/ctec/veiculos) | Consulta de veículos, status GPS em tempo real |
+| [Rastreamento](/ctec/rastreamento) | Histórico de trajetos (track) com paginação |
+| [Alarmes](/ctec/alarmes) | Consulta de alarmes históricos e em tempo real |
+| [Quilometragem](/ctec/quilometragem) | Relatórios de km, tempo online, estacionamento |
+| [Vídeo ao Vivo](/ctec/video) | Streaming HLS, RTSP, player H5 |
+| [Controle Remoto](/ctec/controle) | Comandos ao veículo (corte, TTS, PTZ) |
+| [Dispositivos](/ctec/dispositivos) | CRUD de devices e veículos |
+| [Áreas & Cercas](/ctec/areas) | Geofencing (criação/consulta de áreas) |
+| [Organização](/ctec/organizacao) | Empresas, roles, contas de usuário |
+| [Códigos de Erro](/ctec/codigos-erro) | Tabela completa de erros |
+
+## Encoding de Parâmetros
+
+Valores com caracteres especiais (ex.: chinês, acentos) devem ser codificados:
+
+- **Via URL direta:** `encodeURI(encodeURI(valor))`
+- **Via Ajax (recomendado):** `encodeURI(valor)` no campo `data`
+
+## JSONP
+
+Para chamadas cross-domain via JS, adicione `&callback=nomeFuncao`:
+
+```js
+$.ajax({
+  url: 'http://39.100.229.38:8088/StandardApiAction_login.action?callback=getData',
+  dataType: 'JSONP',
+  success: function(data) { console.log(data); }
+});
+```

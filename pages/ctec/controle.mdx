@@ -1,0 +1,106 @@
+# Controle Remoto
+
+Permite enviar comandos remotos aos dispositivos embarcados nos veículos.
+
+> ⚠️ O dispositivo precisa estar **online** para receber comandos.
+
+## Enviar Comando ao Veículo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_vehicleControl.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número do dispositivo |
+| `command` | string | Sim | Código do comando (ver tabela) |
+| `cmdContent` | string | Não | Conteúdo adicional (ex.: texto TTS) |
+| `cmdType` | number | Não | Subtipo do comando |
+
+### Comandos Disponíveis
+
+| Comando | Descrição | Notas |
+|---------|-----------|-------|
+| `setOil` | Cortar combustível | Desliga o motor remotamente |
+| `resumeOil` | Restaurar combustível | Religa o motor |
+| `setCircuit` | Cortar circuito elétrico | — |
+| `resumeCircuit` | Restaurar circuito | — |
+
+### Exemplo — Corte de Combustível
+
+```
+GET /StandardApiAction_vehicleControl.action?jsession=xxx&devIdno=500000&command=setOil
+```
+
+### Resposta
+
+```json
+{
+  "result": 0
+}
+```
+
+---
+
+## Enviar Mensagem TTS (Voz)
+
+Envia uma mensagem de texto que será lida em voz alta no dispositivo do veículo.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_vehicleTts.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número do dispositivo |
+| `ttsContent` | string | Sim | Texto a ser falado (UTF-8, max ~200 chars) |
+
+### Exemplo
+
+```
+GET /StandardApiAction_vehicleTts.action?jsession=xxx&devIdno=500000&ttsContent=Motorista,%20retorne%20a%20base
+```
+
+---
+
+## Controle PTZ (Câmera)
+
+Controla pan/tilt/zoom de câmeras embarcadas.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_vehiclePtz.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Dispositivo |
+| `channel` | number | Sim | Canal da câmera |
+| `ptzType` | number | Sim | Direção/ação (ver tabela) |
+
+### Códigos PTZ
+
+| Código | Ação |
+|--------|------|
+| 0 | Parar |
+| 1 | Para cima |
+| 2 | Para baixo |
+| 3 | Para esquerda |
+| 4 | Para direita |
+| 5 | Zoom in |
+| 6 | Zoom out |
+| 7 | Foco perto |
+| 8 | Foco longe |
+| 9 | Íris abrir |
+| 10 | Íris fechar |

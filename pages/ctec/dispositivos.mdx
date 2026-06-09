@@ -1,0 +1,163 @@
+# Dispositivos
+
+Gerenciamento de dispositivos GPS/vídeo e veículos na plataforma.
+
+## Consultar Informações do Dispositivo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getDeviceInfo.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número do dispositivo |
+
+---
+
+## Adicionar Dispositivo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addDevice.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número/IMEI do dispositivo |
+| `companyId` | number | Sim | ID da empresa |
+| `sim` | string | Não | Número do SIM card |
+| `channelCount` | number | Não | Quantidade de canais de vídeo |
+
+### Resposta
+
+```json
+{
+  "result": 0
+}
+```
+
+### Erros Comuns
+
+| Código | Significado |
+|--------|-------------|
+| 14 | Limite de dispositivos atingido |
+| 15 | Dispositivo já existe |
+| 17 | Dispositivo já em uso |
+
+---
+
+## Editar Dispositivo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_editDevice.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número do dispositivo |
+| `sim` | string | Não | Novo SIM |
+| `channelCount` | number | Não | Nova quantidade de canais |
+
+---
+
+## Adicionar Veículo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addVehicle.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Sim | Placa do veículo |
+| `companyId` | number | Sim | ID da empresa |
+| `vehicleType` | number | Não | Tipo do veículo |
+
+### Erros Comuns
+
+| Código | Significado |
+|--------|-------------|
+| 16 | Veículo já existe |
+
+---
+
+## Remover Dispositivo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_delDevice.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Número do dispositivo |
+
+---
+
+## Remover Veículo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_delVehicle.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Sim | Placa do veículo |
+
+---
+
+## Instalar Dispositivo em Veículo
+
+Vincula um dispositivo a um veículo.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_installDevice.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Dispositivo |
+| `vehiIdno` | string | Sim | Veículo de destino |
+
+---
+
+## Desinstalar Dispositivo
+
+Remove a vinculação dispositivo-veículo.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_uninstallDevice.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Sim | Dispositivo a desvincular |

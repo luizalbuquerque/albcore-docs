@@ -1,0 +1,216 @@
+# Veículos & GPS
+
+## Listar Veículos do Usuário
+
+Retorna todos os veículos e dispositivos autorizados para o usuário logado.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_queryUserVehicle.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token de sessão |
+| `language` | string | Não | Idioma (`zh` ou `en`) |
+
+### Resposta — Veículo
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | number | ID do veículo |
+| `nm` | string | Placa / identificador |
+| `ic` | number | Ícone do veículo |
+| `pid` | number | ID da empresa/equipe |
+| `pnm` | string | Nome da empresa |
+| `dl` | array | Lista de dispositivos (ver abaixo) |
+| `vehicleType` | number | Tipo: 1=carga perigosa, 2=passageiro, 4=táxi, 5=carga, etc. |
+
+### Resposta — Dispositivo (dentro de `dl[]`)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | Número do dispositivo (DevIdno) |
+| `cc` | number | Quantidade de canais de vídeo |
+| `cn` | string | Nomes dos canais (separados por `,`) |
+| `tc` | number | Quantidade de sensores de temperatura |
+| `md` | number | Módulos suportados (bitwise) |
+| `sim` | string | Número do SIM card |
+| `payEnd` | number | Expiração do serviço (timestamp) |
+
+### Exemplo de Resposta
+
+```json
+{
+  "result": 0,
+  "vehicles": [
+    {
+      "id": 34,
+      "nm": "ABC-1234",
+      "ic": 11,
+      "pid": 1,
+      "vehicleType": 5,
+      "dl": [
+        {
+          "id": "500000",
+          "cc": 4,
+          "cn": "CH1,CH2,CH3,CH4",
+          "tc": 3,
+          "md": 1568,
+          "sim": "5511999999999"
+        }
+      ]
+    }
+  ],
+  "companys": [
+    { "id": 1, "nm": "CTEC Frota", "pid": 0 }
+  ]
+}
+```
+
+---
+
+## Obter Número do Dispositivo pela Placa
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getDeviceByVehicle.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Não | Placa(s), separadas por `,` |
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "devices": [
+    { "vid": "ABC-1234", "type": 1, "did": "500000" },
+    { "vid": "ABC-1234", "type": 0, "did": "500001" }
+  ]
+}
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `type=1` | Dispositivo de vídeo |
+| `type=0` | Dispositivo GPS |
+
+---
+
+## Status Online do Dispositivo
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getDeviceOlStatus.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Não | Número(s) do dispositivo, separados por `,` |
+| `vehiIdno` | string | Não | Placa(s) — usado se `devIdno` estiver vazio |
+| `status` | number | Não | Filtrar: `0`=offline, `1`=online, vazio=todos |
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "onlines": [
+    { "did": "500000", "vid": null, "online": 1 }
+  ]
+}
+```
+
+---
+
+## Status GPS do Dispositivo (Posição Atual)
+
+Retorna a posição GPS mais recente, velocidade, status, sensores, etc.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getDeviceStatus.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `devIdno` | string | Não | Número(s) do dispositivo |
+| `vehiIdno` | string | Não | Placa(s) — fallback se `devIdno` vazio |
+| `geoaddress` | number | Não | `1` = resolver endereço geográfico |
+| `toMap` | number | Não | `1`=Google Maps coords, `2`=Baidu coords |
+| `language` | string | Não | `zh` para endereço em chinês |
+| `driver` | number | Não | `1` = incluir info do motorista |
+
+### Resposta (campos principais)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | DevIdno |
+| `lng` | number | Longitude (÷ 1.000.000 para graus). Ex: `113921858` → `113.921858` |
+| `lat` | number | Latitude (÷ 1.000.000 para graus) |
+| `sp` | number | Velocidade (÷ 10 para km/h). Ex: `520` → `52 km/h` |
+| `ol` | number | Online: `1`=online, `0`=offline |
+| `gt` | string | Hora do último GPS (`yyyy-MM-dd HH:mm:ss`) |
+| `hx` | number | Direção (0°=Norte, sentido horário, max 360°) |
+| `mlng` | string | Longitude convertida (mapa) |
+| `mlat` | string | Latitude convertida (mapa) |
+| `pk` | number | Tempo estacionado (segundos) |
+| `lc` | number | Quilometragem total (metros) |
+| `yl` | number | Combustível (÷ 100 para litros) |
+| `ps` | string | Endereço resolvido (quando `geoaddress=1`) |
+| `t1`–`t4` | number | Sensores de temperatura |
+| `s1`–`s4` | number | Status bits (ver documentação de status) |
+| `dn` | string | Nome do motorista |
+| `jn` | string | Matrícula do motorista |
+| `net` | number | Tipo de rede: 0=3G, 1=WiFi, 2=cabeada, 3=4G, 4=5G |
+
+### Exemplo
+
+```
+GET /StandardApiAction_getDeviceStatus.action?jsession=xxx&devIdno=500000&toMap=1
+```
+
+```json
+{
+  "result": 0,
+  "status": [
+    {
+      "id": "500000",
+      "lng": 113921858,
+      "lat": 22568745,
+      "sp": 520,
+      "ol": 1,
+      "gt": "2026-05-28 15:30:00",
+      "hx": 137,
+      "mlng": "113.926720",
+      "mlat": "22.565703",
+      "pk": 0,
+      "lc": 161446267,
+      "yl": 101,
+      "net": 3
+    }
+  ]
+}
+```
+
+### Mapa de Localização
+
+É possível abrir um mapa embarcado diretamente:
+
+```
+http://39.100.229.38:8088/808gps/open/map/vehicleMap.html?account=USER&password=PASS&devIdno=500000
+```
