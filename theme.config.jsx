@@ -7,10 +7,14 @@ function useIsCtec() {
 }
 
 function Logo() {
-  const isCtec = useIsCtec()
+  const router = useRouter()
+  const isCtec = router.asPath.startsWith('/ctec')
   if (isCtec) {
     return (
-      <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <span
+        onClick={(e) => { e.preventDefault(); router.push('/ctec') }}
+        style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+      >
         <span style={{ fontSize: '1.4rem' }}>📡</span>
         CTEC Rastreamento
       </span>
