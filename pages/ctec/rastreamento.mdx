@@ -1,0 +1,223 @@
+---
+title: Rastreamento
+description: Consulta de histórico de trajetos GPS com paginação e replay no mapa.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Rastreamento
+
+Consulta o histórico de posições GPS de um dispositivo em um período, com paginação.
+
+---
+
+## Consultar Trajeto
+
+Retorna o histórico de posições GPS de um dispositivo em um período.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_queryTrackDetail.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `devIdno` | `string` | Sim | Número do dispositivo |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | `string` | Sim | Fim (`yyyy-MM-dd HH:mm:ss`) |
+| `currentPage` | `number` | Não | Página atual (se vazio, retorna tudo) |
+| `pageRecords` | `number` | Não | Registros por página |
+| `toMap` | `number` | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | `number` | Não | `1` = resolver endereço |
+| `distance` | `number` | Não | Filtro de distância mínima (km) |
+| `parkTime` | `number` | Não | Filtro de tempo de parada (segundos) |
+
+### Campos da Resposta — `tracks[]`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `string` | DevIdno |
+| `lng` | `number` | Longitude (÷ 1.000.000 para graus) |
+| `lat` | `number` | Latitude (÷ 1.000.000 para graus) |
+| `sp` | `number` | Velocidade (÷ 10 → km/h) |
+| `gt` | `string` | Hora GPS |
+| `hx` | `number` | Direção (graus) |
+| `mlng` | `string` | Longitude convertida para mapa |
+| `mlat` | `string` | Latitude convertida para mapa |
+| `pk` | `number` | Tempo estacionado (segundos) |
+| `lc` | `number` | Quilometragem acumulada (metros) |
+| `yl` | `number` | Combustível (÷ 100 → litros) |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_queryTrackDetail.action?\
+jsession=SEU_JSESSION&devIdno=500000&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-01%2023:59:59&\
+currentPage=1&pageRecords=100&toMap=1"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+import requests
+from urllib.parse import quote
+
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_queryTrackDetail.action",
+    params={
+        "jsession": jsession,
+        "devIdno": "500000",
+        "begintime": "2026-05-01 00:00:00",
+        "endtime": "2026-05-01 23:59:59",
+        "currentPage": 1,
+        "pageRecords": 100,
+        "toMap": 1
+    }
+)
+data = response.json()
+
+for point in data.get("tracks", []):
+    lat = point["lat"] / 1_000_000
+    lng = point["lng"] / 1_000_000
+    speed = point["sp"] / 10
+    print(f"[{point['gt']}] {lat:.6f}, {lng:.6f} - {speed} km/h")
+
+pagination = data.get("pagination", {})
+print(f"Página {pagination.get('currentPage')}/{pagination.get('totalPages')}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const params = new URLSearchParams({
+  jsession,
+  devIdno: '500000',
+  begintime: '2026-05-01 00:00:00',
+  endtime: '2026-05-01 23:59:59',
+  currentPage: '1',
+  pageRecords: '100',
+  toMap: '1'
+});
+
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_queryTrackDetail.action?${params}`
+);
+const data = await res.json();
+
+data.tracks?.forEach(p => {
+  const lat = p.lat / 1_000_000;
+  const lng = p.lng / 1_000_000;
+  console.log(`[${p.gt}] ${lat}, ${lng} - ${p.sp / 10} km/h`);
+});
+
+console.log(`Página ${data.pagination?.currentPage}/${data.pagination?.totalPages}`);
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+String url = BASE_URL + "/StandardApiAction_queryTrackDetail.action"
+    + "?jsession=" + jsession
+    + "&devIdno=500000"
+    + "&begintime=" + URLEncoder.encode("2026-05-01 00:00:00", "UTF-8")
+    + "&endtime=" + URLEncoder.encode("2026-05-01 23:59:59", "UTF-8")
+    + "&currentPage=1&pageRecords=100&toMap=1";
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(url)).GET().build();
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+
+JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+JsonArray tracks = json.getAsJsonArray("tracks");
+for (JsonElement el : tracks) {
+    JsonObject p = el.getAsJsonObject();
+    double lat = p.get("lat").getAsDouble() / 1_000_000;
+    double lng = p.get("lng").getAsDouble() / 1_000_000;
+    System.out.printf("[%s] %.6f, %.6f%n", p.get("gt").getAsString(), lat, lng);
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var begintime = Uri.EscapeDataString("2026-05-01 00:00:00");
+var endtime = Uri.EscapeDataString("2026-05-01 23:59:59");
+
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_queryTrackDetail.action"
+    + $"?jsession={jsession}&devIdno=500000"
+    + $"&begintime={begintime}&endtime={endtime}"
+    + "&currentPage=1&pageRecords=100&toMap=1");
+
+var json = JsonDocument.Parse(response).RootElement;
+foreach (var p in json.GetProperty("tracks").EnumerateArray())
+{
+    var lat = p.GetProperty("lat").GetDouble() / 1_000_000;
+    var lng = p.GetProperty("lng").GetDouble() / 1_000_000;
+    var speed = p.GetProperty("sp").GetDouble() / 10;
+    Console.WriteLine($"[{p.GetProperty("gt")}] {lat:F6}, {lng:F6} - {speed:F1} km/h");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "tracks": [
+    {
+      "id": "500000",
+      "lng": 113921858,
+      "lat": 22568745,
+      "sp": 520,
+      "gt": "2026-05-01 08:15:30",
+      "hx": 137,
+      "mlng": "113.926720",
+      "mlat": "22.565703",
+      "pk": 0,
+      "lc": 161446267,
+      "yl": 101
+    }
+  ],
+  "pagination": {
+    "totalPages": 42,
+    "currentPage": 1,
+    "pageRecords": 100,
+    "totalRecords": 4180,
+    "hasNextPage": true
+  }
+}
+```
+
+<Callout type="info">
+Use `currentPage` e `pageRecords` para paginação. Sem eles, a API retorna todos os pontos de uma vez (pode ser pesado em períodos longos).
+</Callout>
+
+---
+
+## Replay de Trajeto (Mapa)
+
+Abre um mapa de replay integrado no navegador:
+
+```
+http://39.100.229.38:8088/808gps/open/trackReplay/Track.html?vehiIdno=ABC1234&jsession=SEU_JSESSION&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59
+```
+
+| Parâmetro | Obrigatório | Descrição |
+|-----------|:-----------:|-----------|
+| `jsession` | Sim | Token de sessão |
+| `vehiIdno` | Sim | Placa do veículo |
+| `begintime` | Sim | Início do período |
+| `endtime` | Sim | Fim do período |

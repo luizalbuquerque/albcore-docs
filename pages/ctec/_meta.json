@@ -1,0 +1,28 @@
+{
+  "index": "Visão Geral",
+  "---getting-started": {
+    "type": "separator",
+    "title": "Primeiros Passos"
+  },
+  "autenticacao": "Autenticação",
+  "integracao": "Guia de Integração",
+  "---endpoints": {
+    "type": "separator",
+    "title": "Endpoints da API"
+  },
+  "veiculos": "Veículos & GPS",
+  "rastreamento": "Rastreamento",
+  "alarmes": "Alarmes",
+  "quilometragem": "Quilometragem",
+  "video": "Vídeo ao Vivo",
+  "controle": "Controle Remoto",
+  "dispositivos": "Dispositivos",
+  "areas": "Áreas & Cercas",
+  "organizacao": "Organização",
+  "---reference": {
+    "type": "separator",
+    "title": "Referência"
+  },
+  "codigos-erro": "Códigos de Erro",
+  "suporte": "Suporte"
+}

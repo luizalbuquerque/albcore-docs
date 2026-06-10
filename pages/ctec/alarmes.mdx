@@ -1,0 +1,332 @@
+---
+title: Alarmes
+description: Consulta de alarmes históricos e monitoramento em tempo real de alarmes da frota.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Alarmes
+
+Consulta alarmes históricos e monitora alarmes em tempo real da frota.
+
+---
+
+## Alarmes Históricos (Paginado)
+
+Retorna alarmes de um dispositivo/veículo em um período.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_queryAlarmDetail.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `devIdno` | `string` | Não | Dispositivo(s), separados por `,` |
+| `vehiIdno` | `string` | Não | Placa(s) — fallback se `devIdno` vazio |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | `string` | Sim | Fim (máx. 90 dias de intervalo) |
+| `armType` | `string` | Sim | Tipo(s) de alarme, separados por `,` |
+| `handle` | `number` | Não | `0`=não tratado, `1`=tratado, vazio=todos |
+| `currentPage` | `number` | Não | Página (default: 1) |
+| `pageRecords` | `number` | Não | Registros por página (default: 10) |
+| `toMap` | `number` | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | `number` | Não | `1` = resolver endereço |
+
+### Campos da Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `atp` | `number` | Tipo do alarme |
+| `did` | `string` | Dispositivo |
+| `vid` | `string` | Placa |
+| `stm` | `number` | Timestamp início (UTC ms) |
+| `etm` | `number` | Timestamp fim (UTC ms) |
+| `guid` | `string` | ID único do alarme |
+| `hd` | `number` | `0`=não tratado, `1`=tratado |
+| `hdu` | `string` | Usuário que tratou |
+| `hdc` | `string` | Conteúdo do tratamento |
+| `img` | `string` | URLs de imagens (separadas por `;`) |
+| `slng`/`slat` | `number` | Coordenadas início |
+| `elng`/`elat` | `number` | Coordenadas fim |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_queryAlarmDetail.action?\
+jsession=SEU_JSESSION&devIdno=500000&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-28%2023:59:59&\
+armType=2,9,11&currentPage=1&pageRecords=50"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_queryAlarmDetail.action",
+    params={
+        "jsession": jsession,
+        "devIdno": "500000",
+        "begintime": "2026-05-01 00:00:00",
+        "endtime": "2026-05-28 23:59:59",
+        "armType": "2,9,11",
+        "currentPage": 1,
+        "pageRecords": 50
+    }
+)
+data = response.json()
+
+ALARM_TYPES = {2: "Excesso velocidade", 9: "Entrada área proibida", 11: "Saída geofence"}
+for alarm in data.get("alarms", []):
+    tipo = ALARM_TYPES.get(alarm["atp"], f"Tipo {alarm['atp']}")
+    tratado = "Tratado" if alarm["hd"] == 1 else "Pendente"
+    print(f"[{alarm['guid']}] {tipo} - {tratado}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const params = new URLSearchParams({
+  jsession,
+  devIdno: '500000',
+  begintime: '2026-05-01 00:00:00',
+  endtime: '2026-05-28 23:59:59',
+  armType: '2,9,11',
+  currentPage: '1',
+  pageRecords: '50'
+});
+
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_queryAlarmDetail.action?${params}`
+);
+const data = await res.json();
+
+const TYPES = { 2: 'Excesso velocidade', 9: 'Área proibida', 11: 'Saída geofence' };
+data.alarms?.forEach(a => {
+  console.log(`[${a.guid}] ${TYPES[a.atp] || a.atp} - ${a.hd ? 'Tratado' : 'Pendente'}`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+String url = BASE_URL + "/StandardApiAction_queryAlarmDetail.action"
+    + "?jsession=" + jsession
+    + "&devIdno=500000"
+    + "&begintime=" + URLEncoder.encode("2026-05-01 00:00:00", "UTF-8")
+    + "&endtime=" + URLEncoder.encode("2026-05-28 23:59:59", "UTF-8")
+    + "&armType=2,9,11&currentPage=1&pageRecords=50";
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(url)).GET().build();
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+
+JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+JsonArray alarms = json.getAsJsonArray("alarms");
+for (JsonElement el : alarms) {
+    JsonObject a = el.getAsJsonObject();
+    System.out.printf("Alarme tipo %d - %s%n",
+        a.get("atp").getAsInt(),
+        a.get("hd").getAsInt() == 1 ? "Tratado" : "Pendente");
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var begintime = Uri.EscapeDataString("2026-05-01 00:00:00");
+var endtime = Uri.EscapeDataString("2026-05-28 23:59:59");
+
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_queryAlarmDetail.action"
+    + $"?jsession={jsession}&devIdno=500000"
+    + $"&begintime={begintime}&endtime={endtime}"
+    + "&armType=2,9,11&currentPage=1&pageRecords=50");
+
+var json = JsonDocument.Parse(response).RootElement;
+foreach (var alarm in json.GetProperty("alarms").EnumerateArray())
+{
+    var tipo = alarm.GetProperty("atp").GetInt32();
+    var tratado = alarm.GetProperty("hd").GetInt32() == 1 ? "Tratado" : "Pendente";
+    Console.WriteLine($"Alarme tipo {tipo} - {tratado}");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "alarms": [
+    {
+      "atp": 2,
+      "did": "500000",
+      "vid": "ABC-1234",
+      "stm": 1716912048000,
+      "etm": 1716912108000,
+      "guid": "A1B2C3D4E5F6",
+      "hd": 0,
+      "slng": 113921858,
+      "slat": 22568745,
+      "img": ""
+    }
+  ],
+  "pagination": {
+    "totalPages": 3,
+    "currentPage": 1,
+    "totalRecords": 127
+  }
+}
+```
+
+---
+
+## Alarmes em Tempo Real
+
+Retorna os alarmes ativos de um dispositivo **online**.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleAlarm.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `DevIDNO` | `string` | Não | Número do dispositivo |
+| `toMap` | `number` | Não | Conversão de coordenadas |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_vehicleAlarm.action?jsession=SEU_JSESSION&DevIDNO=500000&toMap=2"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_vehicleAlarm.action",
+    params={"jsession": jsession, "DevIDNO": "500000", "toMap": 2}
+)
+data = response.json()
+
+for alarm in data.get("alarmlist", []):
+    gps = alarm.get("Gps", {})
+    speed = gps.get("sp", 0) / 10
+    print(f"Alarme tipo {alarm['type']} às {alarm['time']} - {speed} km/h")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_vehicleAlarm.action?jsession=${jsession}&DevIDNO=500000&toMap=2`
+);
+const data = await res.json();
+
+data.alarmlist?.forEach(a => {
+  const speed = (a.Gps?.sp || 0) / 10;
+  console.log(`Alarme tipo ${a.type} às ${a.time} - ${speed} km/h`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_vehicleAlarm.action"
+        + "?jsession=" + jsession + "&DevIDNO=500000&toMap=2"))
+    .GET().build();
+
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+JsonArray alarms = JsonParser.parseString(response.body())
+    .getAsJsonObject().getAsJsonArray("alarmlist");
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_vehicleAlarm.action"
+    + $"?jsession={jsession}&DevIDNO=500000&toMap=2");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var alarm in json.GetProperty("alarmlist").EnumerateArray())
+{
+    var tipo = alarm.GetProperty("type").GetInt32();
+    var time = alarm.GetProperty("time").GetString();
+    Console.WriteLine($"Alarme tipo {tipo} às {time}");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+```json
+{
+  "result": 0,
+  "alarmlist": [
+    {
+      "DevIDNO": "500000",
+      "type": 48,
+      "guid": "C0C580F6E5094FDF8710289627676075",
+      "hd": 0,
+      "time": "2026-05-28 18:20:48",
+      "Gps": {
+        "lng": 113827278,
+        "lat": 22649633,
+        "sp": 540,
+        "mlng": "113.838835",
+        "mlat": "22.652409"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Tipos de Alarme
+
+| Código | Descrição |
+|:------:|-----------|
+| 2 | Excesso de velocidade |
+| 9 | Entrada em área proibida |
+| 11 | Saída de área (geofence) |
+| 14 | Fadiga ao volante |
+| 15 | Colisão |
+| 16 | Capotamento |
+| 17 | Porta aberta em movimento |
+| 20 | Corte de combustível |
+| 22 | Pânico (SOS) |
+| 23 | Bateria fraca |
+| 48 | Alarme ADAS (colisão frontal) |
+| 49 | Desvio de faixa (ADAS) |
+| 50 | Fadiga (DSM) |
+| 51 | Fumando (DSM) |
+| 52 | Celular ao volante (DSM) |
+
+<Callout type="info">
+Use o campo `armType` na consulta para filtrar por um ou mais tipos. Separe múltiplos tipos com vírgula: `armType=2,9,11`.
+</Callout>

@@ -1,0 +1,413 @@
+---
+title: Quilometragem
+description: Relatórios de quilometragem diária, detalhada, estacionamento e última localização.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Quilometragem & Estacionamento
+
+Relatórios de quilometragem diária, detalhada, estacionamento e última localização dos veículos.
+
+---
+
+## Quilometragem por Dia
+
+Retorna a quilometragem rodada por dia.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_runMileage.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `vehiIdno` | `string` | Não | Placa(s), separadas por `,` |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd`) |
+| `endtime` | `string` | Sim | Fim (`yyyy-MM-dd`) |
+| `currentPage` | `number` | Não | Página |
+| `pageRecords` | `number` | Não | Registros por página |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_runMileage.action?\
+jsession=SEU_JSESSION&vehiIdno=ABC1234&\
+begintime=2026-05-01&endtime=2026-05-28&\
+currentPage=1&pageRecords=50"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_runMileage.action",
+    params={
+        "jsession": jsession,
+        "vehiIdno": "ABC1234",
+        "begintime": "2026-05-01",
+        "endtime": "2026-05-28",
+        "currentPage": 1,
+        "pageRecords": 50
+    }
+)
+data = response.json()
+
+for info in data.get("infos", []):
+    km = info["mile"] / 1000
+    horas = info["ttime"] / 3600
+    print(f"Placa {info['vehIdno']}: {km:.1f} km em {horas:.1f}h")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const params = new URLSearchParams({
+  jsession,
+  vehiIdno: 'ABC1234',
+  begintime: '2026-05-01',
+  endtime: '2026-05-28',
+  currentPage: '1',
+  pageRecords: '50'
+});
+
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_runMileage.action?${params}`
+);
+const data = await res.json();
+
+data.infos?.forEach(info => {
+  const km = info.mile / 1000;
+  const horas = (info.ttime / 3600).toFixed(1);
+  console.log(`${info.vehIdno}: ${km.toFixed(1)} km em ${horas}h`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+String url = BASE_URL + "/StandardApiAction_runMileage.action"
+    + "?jsession=" + jsession
+    + "&vehiIdno=ABC1234&begintime=2026-05-01&endtime=2026-05-28"
+    + "&currentPage=1&pageRecords=50";
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(url)).GET().build();
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+
+JsonArray infos = JsonParser.parseString(response.body())
+    .getAsJsonObject().getAsJsonArray("infos");
+for (JsonElement el : infos) {
+    JsonObject info = el.getAsJsonObject();
+    double km = info.get("mile").getAsDouble() / 1000;
+    System.out.printf("%s: %.1f km%n", info.get("vehIdno").getAsString(), km);
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_runMileage.action"
+    + $"?jsession={jsession}&vehiIdno=ABC1234"
+    + "&begintime=2026-05-01&endtime=2026-05-28"
+    + "&currentPage=1&pageRecords=50");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var info in json.GetProperty("infos").EnumerateArray())
+{
+    var km = info.GetProperty("mile").GetDouble() / 1000;
+    var horas = info.GetProperty("ttime").GetDouble() / 3600;
+    Console.WriteLine($"{info.GetProperty("vehIdno")}: {km:F1} km em {horas:F1}h");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehIdno` | `string` | Placa |
+| `mile` | `number` | Quilometragem (metros) |
+| `sTimeStr` | `string` | Hora de início (online) |
+| `eTimeStr` | `string` | Hora de fim (offline) |
+| `ttime` | `number` | Tempo online (segundos) |
+
+```json
+{
+  "result": 0,
+  "infos": [
+    {
+      "vehIdno": "ABC1234",
+      "mile": 85200,
+      "sTimeStr": "2026-05-20 06:30:13",
+      "eTimeStr": "2026-05-20 18:45:49",
+      "ttime": 44136
+    }
+  ],
+  "pagination": { "totalPages": 1, "currentPage": 1, "totalRecords": 1 }
+}
+```
+
+---
+
+## Relatório Detalhado de Quilometragem
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_getOilTrackDetail.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `vehiIdno` | `string` | Não | Placa(s) |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | `string` | Sim | Fim |
+| `toMap` | `number` | Não | Conversão de coordenadas |
+| `byOil` | `number` | Não | `1` = relatório de combustível; outro = quilometragem |
+| `currentPage` | `number` | Não | Página |
+| `pageRecords` | `number` | Não | Registros por página |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_getOilTrackDetail.action?\
+jsession=SEU_JSESSION&vehiIdno=ABC1234&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-28%2023:59:59&\
+toMap=2&currentPage=1&pageRecords=10"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_getOilTrackDetail.action",
+    params={
+        "jsession": jsession,
+        "vehiIdno": "ABC1234",
+        "begintime": "2026-05-01 00:00:00",
+        "endtime": "2026-05-28 23:59:59",
+        "toMap": 2,
+        "currentPage": 1,
+        "pageRecords": 10
+    }
+)
+for info in response.json().get("infos", []):
+    km = info["liCheng"] / 1000
+    litros = info["youLiang"] / 100
+    print(f"{info['bTimeStr']} → {info['eTimeStr']}: {km:.1f} km, {litros:.1f} L")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_getOilTrackDetail.action?jsession=${jsession}`
+  + `&vehiIdno=ABC1234&begintime=${encodeURIComponent('2026-05-01 00:00:00')}`
+  + `&endtime=${encodeURIComponent('2026-05-28 23:59:59')}&toMap=2&currentPage=1&pageRecords=10`
+);
+const data = await res.json();
+data.infos?.forEach(i => {
+  console.log(`${i.bTimeStr} → ${i.eTimeStr}: ${(i.liCheng/1000).toFixed(1)} km`);
+});
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehiIdno` | `string` | Placa |
+| `companyName` | `string` | Empresa |
+| `liCheng` | `number` | Km total (metros) |
+| `youLiang` | `number` | Consumo total (÷ 100 → litros) |
+| `bTimeStr` | `string` | Início do trecho |
+| `eTimeStr` | `string` | Fim do trecho |
+| `startPosition` | `string` | Endereço de partida |
+| `endPosition` | `string` | Endereço de chegada |
+
+---
+
+## Relatório de Estacionamento
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_parkDetail.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `vehiIdno` | `string` | Não | Placa(s) |
+| `begintime` | `string` | Sim | Início |
+| `endtime` | `string` | Sim | Fim |
+| `parkTime` | `number` | Sim | Tempo mínimo de parada (segundos) para considerar estacionado |
+| `toMap` | `number` | Sim | `1`=Google, `2`=Baidu |
+| `geoaddress` | `number` | Não | `1` = resolver endereço |
+| `currentPage` | `number` | Não | Página |
+| `pageRecords` | `number` | Não | Registros por página |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_parkDetail.action?\
+jsession=SEU_JSESSION&vehiIdno=ABC1234&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-28%2023:59:59&\
+parkTime=300&toMap=2&geoaddress=1&currentPage=1&pageRecords=50"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_parkDetail.action",
+    params={
+        "jsession": jsession,
+        "vehiIdno": "ABC1234",
+        "begintime": "2026-05-01 00:00:00",
+        "endtime": "2026-05-28 23:59:59",
+        "parkTime": 300,  # mínimo 5 minutos
+        "toMap": 2,
+        "geoaddress": 1,
+        "currentPage": 1,
+        "pageRecords": 50
+    }
+)
+for info in response.json().get("infos", []):
+    minutos = info["alarmTotalTime"] / 60
+    print(f"Parado {minutos:.0f} min em: {info.get('startPosition', 'N/A')}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_parkDetail.action?jsession=${jsession}`
+  + `&vehiIdno=ABC1234&begintime=${encodeURIComponent('2026-05-01 00:00:00')}`
+  + `&endtime=${encodeURIComponent('2026-05-28 23:59:59')}`
+  + `&parkTime=300&toMap=2&geoaddress=1&currentPage=1&pageRecords=50`
+);
+const data = await res.json();
+data.infos?.forEach(i => {
+  console.log(`Parado ${(i.alarmTotalTime/60).toFixed(0)} min em: ${i.startPosition}`);
+});
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehIdno` | `string` | Placa |
+| `companyName` | `string` | Empresa |
+| `startPosition` | `string` | Endereço do estacionamento |
+| `armTimeStart` | `number` | Início da parada (timestamp ms) |
+| `armTimeEnd` | `number` | Fim da parada (timestamp ms) |
+| `alarmTotalTime` | `number` | Duração total da parada (segundos) |
+
+---
+
+## Lista de Última Localização
+
+Retorna a posição mais recente de veículos.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleStatus.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `vehiIdno` | `string` | Não | Placa(s) |
+| `toMap` | `number` | Não | Conversão coords |
+| `geoaddress` | `number` | Não | `1` = endereço |
+| `currentPage` | `number` | Não | Página |
+| `pageRecords` | `number` | Não | Registros por página |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_vehicleStatus.action?\
+jsession=SEU_JSESSION&vehiIdno=ABC1234&toMap=2&geoaddress=1&\
+currentPage=1&pageRecords=50"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_vehicleStatus.action",
+    params={
+        "jsession": jsession,
+        "vehiIdno": "ABC1234",
+        "toMap": 2,
+        "geoaddress": 1,
+        "currentPage": 1,
+        "pageRecords": 50
+    }
+)
+for info in response.json().get("infos", []):
+    lat = info["wd"] / 1_000_000
+    lng = info["jd"] / 1_000_000
+    print(f"{info['vi']}: {lat:.6f}, {lng:.6f} - {info.get('pos', '')}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_vehicleStatus.action?jsession=${jsession}`
+  + `&vehiIdno=ABC1234&toMap=2&geoaddress=1&currentPage=1&pageRecords=50`
+);
+const data = await res.json();
+data.infos?.forEach(i => {
+  console.log(`${i.vi}: ${(i.wd/1e6).toFixed(6)}, ${(i.jd/1e6).toFixed(6)} - ${i.pos}`);
+});
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vi` | `string` | Placa |
+| `tm` | `number` | Timestamp (ms) |
+| `jd` | `number` | Longitude |
+| `wd` | `number` | Latitude |
+| `pos` | `string` | Endereço (quando `geoaddress=1`) |

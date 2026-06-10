@@ -1,0 +1,118 @@
+---
+title: Suporte
+description: Canais de suporte, SLA e informações de contato para clientes CTEC.
+---
+
+import { Callout } from 'nextra/components'
+
+# Suporte
+
+## Canais de Suporte
+
+| Canal | Contato | Horário |
+|-------|---------|---------|
+| **Suporte Técnico CTEC** | suporte@ctec.com.br | Seg–Sex, 8h–18h |
+| **WhatsApp Suporte** | +55 (XX) XXXXX-XXXX | Seg–Sex, 8h–18h |
+| **E-mail Integrações** | integracoes@albuquerquetech.com.br | Seg–Sex, 9h–17h |
+| **Emergência (24h)** | Abertura de ticket via painel | 24/7 |
+
+---
+
+## Rede de Apoio à Integração
+
+A Albuquerque Tech oferece uma rede completa de apoio para clientes CTEC que desejam
+integrar a plataforma de rastreamento em seus sistemas.
+
+### Níveis de Suporte
+
+| Nível | Incluso | SLA |
+|-------|---------|-----|
+| **Básico** | Documentação + FAQ + e-mail | Resposta em até 48h |
+| **Profissional** | Consultoria técnica + call de integração | Resposta em até 24h |
+| **Enterprise** | Engenheiro dedicado + implementação assistida | Resposta em até 4h |
+
+### O Que Oferecemos
+
+- **Consultoria de Integração** — Chamadas técnicas para alinhar arquitetura e fluxo de dados
+- **Ambiente de Sandbox** — Servidor de testes com dados simulados para desenvolvimento
+- **SDK & Bibliotecas** — Código de referência em Node.js e Python (veja [Guia de Integração](/ctec/integracao))
+- **Monitoramento Proativo** — Alertas sobre indisponibilidade da API ou mudanças de versão
+- **Treinamento** — Workshops de integração para equipes de desenvolvimento
+
+---
+
+## Novas Integrações Disponíveis
+
+A plataforma CTEC está em constante evolução. Abaixo, as integrações planejadas e disponíveis
+para clientes da rede:
+
+### Disponíveis Agora
+
+| Integração | Descrição | Status |
+|------------|-----------|--------|
+| **API REST (808GPS)** | API completa documentada nesta seção | ✓ Ativo |
+| **HLS Video Stream** | Streaming de vídeo em tempo real | ✓ Ativo |
+| **Webhook de Alarmes** | Notificações push de alarmes via HTTP | ✓ Ativo |
+| **Mapa Embarcado** | iFrame com mapa de localização | ✓ Ativo |
+
+### Em Desenvolvimento
+
+| Integração | Descrição | Previsão |
+|------------|-----------|----------|
+| **AlbCore Billing** | Cobrança automática de mensalidades via PIX/cartão/boleto | Q3 2026 |
+| **WhatsApp Notifications** | Alertas de alarmes e cobranças via WhatsApp (Cloud API) | Q3 2026 |
+| **SDK React** | Componentes React para mapa, lista de veículos e player de vídeo | Q4 2026 |
+| **API GraphQL** | Camada GraphQL sobre a API REST para consultas otimizadas | Q4 2026 |
+| **Integração ERP** | Conexão com ERPs (TOTVS, SAP, Omie) para dados de frota | 2027 |
+
+### Solicitar Nova Integração
+
+Precisa de uma integração que não está na lista? Entre em contato:
+
+1. Descreva seu caso de uso
+2. Informe o sistema de destino (ERP, CRM, BI, etc.)
+3. Envie para **integracoes@albuquerquetech.com.br**
+
+Nossa equipe avalia e retorna com um plano de implementação em até 5 dias úteis.
+
+---
+
+## FAQ — Perguntas Frequentes
+
+### A sessão (jsession) expira?
+
+Sim, após ~30 minutos de inatividade. Ao receber `result: 5`, refaça o login.
+
+### Quantas requisições posso fazer por minuto?
+
+Não há rate limit documentado, mas recomendamos no máximo **60 requisições/minuto** por sessão.
+Para monitoramento de frota grande (+100 veículos), use batch requests com múltiplos `devIdno` separados por vírgula.
+
+### O vídeo funciona em HTTPS?
+
+O servidor de mídia atualmente opera em HTTP. Para HTTPS, é necessário configurar um proxy reverso (nginx/Traefik) com certificado SSL.
+
+### Posso usar WebSocket para dados em tempo real?
+
+A API atual é baseada em polling (HTTP). WebSocket não está disponível nativamente, mas é possível implementar um gateway intermediário que faz polling e publica via WS.
+
+### Como converter as coordenadas para usar no Google Maps?
+
+Passe `toMap=1` na requisição. Sem isso, as coordenadas vêm em WGS84 — divida por 1.000.000 para obter graus decimais compatíveis com OpenStreetMap/Mapbox.
+
+---
+
+## Changelog da API
+
+| Data | Versão | Mudança |
+|------|--------|---------|
+| 2025-05-16 | v7.35.2 | Versão atual do servidor |
+| — | — | Documentação inicial CTEC publicada |
+
+---
+
+## Links Úteis
+
+- [Documentação AlbCore (Plataforma)](/documentation/)
+- [API Reference - AlbCore](/documentation/api-reference/authentication)
+- [808GPS Web API](http://39.100.229.38:8088/808gps/open/webApi.html?lang=en) (documentação original em inglês)

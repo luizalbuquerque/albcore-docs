@@ -2,5 +2,10 @@
   "index": "Início",
   "introduction": "Introdução",
   "api-reference": "API Reference",
-  "modules": "Módulos"
+  "modules": "Módulos",
+  "ctec": {
+    "title": "CTEC",
+    "type": "page",
+    "display": "hidden"
+  }
 }

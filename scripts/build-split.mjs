@@ -24,7 +24,7 @@ const INTERNAL_ONLY = ['architecture', 'deployment', 'contributing', 'roadmap.md
 
 function build(basePath, outName) {
   console.log(`\n=== build ${outName} (basePath=${basePath || '/'}) ===`)
-  execSync('next build', {
+  execSync('npx next build', {
     stdio: 'inherit',
     env: { ...process.env, DOCS_BASE_PATH: basePath },
   })

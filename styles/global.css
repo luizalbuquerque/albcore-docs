@@ -30,3 +30,180 @@
 .badge-red    { background: #fee2e2; color: #b91c1c; }
 .badge-gray   { background: #f3f4f6; color: #374151; }
 
+/* ========================================
+   CTEC Theme Override
+   ======================================== */
+
+/* CTEC color scheme — teal/green */
+html[data-site="ctec"] {
+  --primary-hue: 168 !important;
+  --primary-saturation: 75% !important;
+}
+
+/* Hide GitHub project link on CTEC pages */
+html[data-site="ctec"] nav a[href*="github.com"] {
+  display: none !important;
+}
+
+/* Hide AlbCore banner on CTEC pages */
+html[data-site="ctec"] .nextra-banner-container {
+  display: none !important;
+}
+html[data-site="ctec"] {
+  --nextra-banner-height: 0px !important;
+}
+
+/* CTEC nav/header styling */
+html[data-site="ctec"] .nextra-nav-container nav {
+  border-bottom-color: #14b8a6;
+}
+
+/* Hide AlbCore sidebar items on CTEC pages */
+html[data-site="ctec"] aside li:has(> a[href="/documentation"]) {
+  display: none !important;
+}
+html[data-site="ctec"] aside li:has(> button) {
+  display: none !important;
+}
+
+/* CTEC sidebar separator styling */
+html[data-site="ctec"] .nextra-sidebar-container li.nx-mt-5:first-child {
+  margin-top: 0;
+}
+
+/* CTEC method badges */
+.method-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+.method-get    { background: #dbeafe; color: #1d4ed8; }
+.method-post   { background: #dcfce7; color: #15803d; }
+.method-put    { background: #fef9c3; color: #a16207; }
+.method-delete { background: #fee2e2; color: #b91c1c; }
+
+/* CTEC endpoint URL styling */
+.endpoint-url {
+  display: inline-block;
+  background: #f1f5f9;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+  word-break: break-all;
+}
+
+html.dark .endpoint-url {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* CTEC cards grid */
+.ctec-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.ctec-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ctec-card:hover {
+  border-color: #14b8a6;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+}
+
+html.dark .ctec-card {
+  border-color: #334155;
+}
+html.dark .ctec-card:hover {
+  border-color: #14b8a6;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
+}
+
+.ctec-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ctec-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+html.dark .ctec-card p {
+  color: #94a3b8;
+}
+
+/* CTEC status indicator */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.status-online  { background: #22c55e; }
+.status-offline { background: #ef4444; }
+.status-warning { background: #f59e0b; }
+
+/* CTEC hero section */
+.ctec-hero {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1rem 0 2rem;
+  border: 1px solid #99f6e4;
+}
+html.dark .ctec-hero {
+  background: linear-gradient(135deg, #042f2e 0%, #064e3b 100%);
+  border-color: #115e59;
+}
+.ctec-hero h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+.ctec-hero p {
+  margin: 0;
+  color: #475569;
+}
+html.dark .ctec-hero p {
+  color: #94a3b8;
+}
+
+/* CTEC base URL box */
+.base-url-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+html.dark .base-url-box {
+  background: #1e293b;
+  border-color: #334155;
+}
+.base-url-box .label {
+  font-family: inherit;
+  font-weight: 600;
+  color: #14b8a6;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

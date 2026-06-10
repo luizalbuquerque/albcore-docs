@@ -1,0 +1,270 @@
+---
+title: Controle Remoto
+description: Envio de comandos remotos aos veículos — corte de combustível, TTS e controle PTZ de câmera.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Controle Remoto
+
+Permite enviar comandos remotos aos dispositivos embarcados nos veículos.
+
+<Callout type="warning">
+O dispositivo precisa estar **online** para receber comandos.
+</Callout>
+
+## Enviar Comando ao Veículo
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleControl.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `devIdno` | `string` | Sim | Número do dispositivo |
+| `command` | `string` | Sim | Código do comando (ver tabela) |
+| `cmdContent` | `string` | Não | Conteúdo adicional (ex.: texto TTS) |
+| `cmdType` | `number` | Não | Subtipo do comando |
+
+### Comandos Disponíveis
+
+| Comando | Descrição | Notas |
+|---------|-----------|-------|
+| `setOil` | Cortar combustível | Desliga o motor remotamente |
+| `resumeOil` | Restaurar combustível | Religa o motor |
+| `setCircuit` | Cortar circuito elétrico | — |
+| `resumeCircuit` | Restaurar circuito | — |
+
+### Exemplo — Corte de Combustível
+
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_vehicleControl.action?\
+jsession=SEU_JSESSION&devIdno=500000&command=setOil"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+# Cortar combustível
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_vehicleControl.action",
+    params={
+        "jsession": jsession,
+        "devIdno": "500000",
+        "command": "setOil"
+    }
+)
+if response.json()["result"] == 0:
+    print("Combustível cortado com sucesso!")
+
+# Restaurar combustível
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_vehicleControl.action",
+    params={"jsession": jsession, "devIdno": "500000", "command": "resumeOil"}
+)
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+// Cortar combustível
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_vehicleControl.action`
+  + `?jsession=${jsession}&devIdno=500000&command=setOil`
+);
+const data = await res.json();
+if (data.result === 0) console.log('Combustível cortado!');
+
+// Restaurar combustível
+await fetch(
+  `${BASE_URL}/StandardApiAction_vehicleControl.action`
+  + `?jsession=${jsession}&devIdno=500000&command=resumeOil`
+);
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_vehicleControl.action"
+        + "?jsession=" + jsession + "&devIdno=500000&command=setOil"))
+    .GET().build();
+
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+if (json.get("result").getAsInt() == 0) {
+    System.out.println("Combustível cortado!");
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_vehicleControl.action"
+    + $"?jsession={jsession}&devIdno=500000&command=setOil");
+var json = JsonDocument.Parse(response).RootElement;
+
+if (json.GetProperty("result").GetInt32() == 0)
+    Console.WriteLine("Combustível cortado!");
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
+```json
+{
+  "result": 0
+}
+```
+
+---
+
+## Enviar Mensagem TTS (Voz)
+
+Envia uma mensagem de texto que será lida em voz alta no dispositivo do veículo.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleTts.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `devIdno` | `string` | Sim | Número do dispositivo |
+| `ttsContent` | `string` | Sim | Texto a ser falado (UTF-8, max ~200 chars) |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_vehicleTts.action?\
+jsession=SEU_JSESSION&devIdno=500000&\
+ttsContent=Motorista%2C%20retorne%20a%20base"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_vehicleTts.action",
+    params={
+        "jsession": jsession,
+        "devIdno": "500000",
+        "ttsContent": "Motorista, retorne a base"
+    }
+)
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+await fetch(
+  `${BASE_URL}/StandardApiAction_vehicleTts.action`
+  + `?jsession=${jsession}&devIdno=500000`
+  + `&ttsContent=${encodeURIComponent('Motorista, retorne a base')}`
+);
+```
+</Tabs.Tab>
+
+</Tabs>
+
+---
+
+## Controle PTZ (Câmera)
+
+Controla pan/tilt/zoom de câmeras embarcadas.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehiclePtz.action</code>
+</div>
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token |
+| `devIdno` | `string` | Sim | Dispositivo |
+| `channel` | `number` | Sim | Canal da câmera |
+| `ptzType` | `number` | Sim | Direção/ação (ver tabela) |
+
+### Códigos PTZ
+
+| Código | Ação |
+|--------|------|
+| 0 | Parar |
+| 1 | Para cima |
+| 2 | Para baixo |
+| 3 | Para esquerda |
+| 4 | Para direita |
+| 5 | Zoom in |
+| 6 | Zoom out |
+| 7 | Foco perto |
+| 8 | Foco longe |
+| 9 | Íris abrir |
+| 10 | Íris fechar |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Python', 'JavaScript']}>
+
+<Tabs.Tab>
+```bash
+# Mover câmera para a direita
+curl "http://39.100.229.38:8088/StandardApiAction_vehiclePtz.action?\
+jsession=SEU_JSESSION&devIdno=500000&channel=0&ptzType=4"
+
+# Parar movimento
+curl "http://39.100.229.38:8088/StandardApiAction_vehiclePtz.action?\
+jsession=SEU_JSESSION&devIdno=500000&channel=0&ptzType=0"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+# Mover câmera para a direita
+requests.get(
+    f"{BASE_URL}/StandardApiAction_vehiclePtz.action",
+    params={"jsession": jsession, "devIdno": "500000", "channel": 0, "ptzType": 4}
+)
+
+# Parar movimento
+requests.get(
+    f"{BASE_URL}/StandardApiAction_vehiclePtz.action",
+    params={"jsession": jsession, "devIdno": "500000", "channel": 0, "ptzType": 0}
+)
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+// Mover câmera para a direita
+await fetch(`${BASE_URL}/StandardApiAction_vehiclePtz.action`
+  + `?jsession=${jsession}&devIdno=500000&channel=0&ptzType=4`);
+
+// Parar
+await fetch(`${BASE_URL}/StandardApiAction_vehiclePtz.action`
+  + `?jsession=${jsession}&devIdno=500000&channel=0&ptzType=0`);
+```
+</Tabs.Tab>
+
+</Tabs>

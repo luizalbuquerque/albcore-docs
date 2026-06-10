@@ -1,0 +1,154 @@
+---
+title: Áreas & Cercas
+description: Geofencing — criação de cercas virtuais e consulta de eventos de entrada/saída.
+---
+
+import { Callout } from 'nextra/components'
+
+# Áreas & Cercas Virtuais (Geofencing)
+
+Permite criar cercas virtuais e consultar eventos de entrada/saída de veículos.
+
+## Listar Áreas do Usuário
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_getAreaInfo.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+
+### Resposta
+
+Retorna a lista de áreas cadastradas com seus pontos/coordenadas.
+
+---
+
+## Adicionar Área
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_addAreaInfo.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `areaName` | string | Sim | Nome da área |
+| `areaType` | number | Sim | Tipo: `1`=círculo, `2`=retângulo, `3`=polígono |
+| `points` | string | Sim | Coordenadas (formato depende do tipo) |
+| `alarmType` | number | Não | `1`=entrada, `2`=saída, `3`=ambos |
+
+### Formato de Coordenadas
+
+- **Círculo:** `lng,lat,radius` (raio em metros)
+- **Retângulo:** `lng1,lat1,lng2,lat2` (canto superior-esquerdo e inferior-direito)
+- **Polígono:** `lng1,lat1;lng2,lat2;lng3,lat3;...` (mínimo 3 pontos)
+
+---
+
+## Editar Área
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_editAreaInfo.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `areaId` | number | Sim | ID da área |
+| `areaName` | string | Não | Novo nome |
+| `points` | string | Não | Novas coordenadas |
+
+---
+
+## Consultar Área por ID
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_findAreaInfo.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `areaId` | number | Sim | ID da área |
+
+---
+
+## Excluir Área
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_deleteAreaInfo.action` |
+| **Método** | POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `areaId` | number | Sim | ID da área a excluir |
+
+---
+
+## Histórico de Entrada/Saída de Áreas
+
+Consulta quando veículos entraram ou saíram de áreas cadastradas.
+
+| | |
+|---|---|
+| **URL** | `/StandardApiAction_queryAccessAreaInfo.action` |
+| **Método** | GET / POST |
+
+### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `jsession` | string | Sim | Token |
+| `vehiIdno` | string | Sim | Placa(s) |
+| `begintime` | string | Sim | Início |
+| `endtime` | string | Sim | Fim |
+| `toMap` | number | Não | `1`=Google, `2`=Baidu |
+| `currentPage` | number | Não | Página |
+| `pageRecords` | number | Não | Registros/página |
+
+### Resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `vehicle` | string | Placa |
+| `gpsTime` | number | Timestamp do evento (ms) |
+| `lat` | string | Latitude |
+| `lon` | string | Longitude |
+| `customArea` | string | Nome da área |
+| `passType` | number | `1`=entrada, `2`=saída |
+
+### Exemplo de Resposta
+
+```json
+{
+  "result": 0,
+  "infos": [
+    {
+      "vehicle": "ABC1234",
+      "gpsTime": 1676346074000,
+      "lat": "22.638488",
+      "lon": "113.853973",
+      "customArea": "Base CTEC - Centro",
+      "passType": 2
+    }
+  ]
+}
+```
