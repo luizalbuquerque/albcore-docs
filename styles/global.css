@@ -58,6 +58,14 @@ html[data-site="ctec"] .nextra-nav-container nav {
   border-bottom-color: #14b8a6;
 }
 
+/* Hide AlbCore sidebar items on CTEC pages */
+html[data-site="ctec"] aside li:has(> a[href="/documentation"]) {
+  display: none !important;
+}
+html[data-site="ctec"] aside li:has(> button) {
+  display: none !important;
+}
+
 /* CTEC sidebar separator styling */
 html[data-site="ctec"] .nextra-sidebar-container li.nx-mt-5:first-child {
   margin-top: 0;
