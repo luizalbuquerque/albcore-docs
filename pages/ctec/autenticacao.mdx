@@ -11,7 +11,7 @@ O sistema de autenticação utiliza sessões baseadas em token (`jsession`).
 Após o login, o `jsession` deve ser enviado como query parameter em **todas** as requisições subsequentes.
 
 <Callout type="info">
-O token `jsession` tem validade limitada. Se receber `result: 3` em qualquer endpoint, faça login novamente.
+O token `jsession` tem validade limitada. Se receber `result: 5` em qualquer endpoint, faça login novamente.
 </Callout>
 
 ---
@@ -35,21 +35,11 @@ Autentica o usuário e retorna um `jsession` válido.
 
 ### Exemplo
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
 
 <Tabs.Tab>
 ```bash
-curl "http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123"
-```
-</Tabs.Tab>
-
-<Tabs.Tab>
-```javascript
-const res = await fetch(
-  'http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123'
-);
-const data = await res.json();
-console.log(data.jsession); // Token para usar nas próximas chamadas
+curl -X GET "http://39.100.229.38:8088/StandardApiAction_login.action?account=SEU_USER&password=SUA_SENHA"
 ```
 </Tabs.Tab>
 
@@ -57,12 +47,94 @@ console.log(data.jsession); // Token para usar nas próximas chamadas
 ```python
 import requests
 
-resp = requests.get(
-    "http://39.100.229.38:8088/StandardApiAction_login.action",
-    params={"account": "ctec", "password": "senha123"}
+BASE_URL = "http://39.100.229.38:8088"
+
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_login.action",
+    params={"account": "SEU_USER", "password": "SUA_SENHA"}
 )
-data = resp.json()
-print(data["jsession"])  # Token para usar nas próximas chamadas
+data = response.json()
+
+if data["result"] == 0:
+    jsession = data["jsession"]
+    print(f"Autenticado! Token: {jsession}")
+else:
+    print(f"Erro no login: código {data['result']}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const BASE_URL = 'http://39.100.229.38:8088';
+
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_login.action?account=SEU_USER&password=SUA_SENHA`
+);
+const data = await res.json();
+
+if (data.result === 0) {
+  const jsession = data.jsession;
+  console.log(`Autenticado! Token: ${jsession}`);
+} else {
+  console.error(`Erro no login: código ${data.result}`);
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+import java.net.http.*;
+import java.net.URI;
+import com.google.gson.*;
+
+public class CTECAuth {
+    static final String BASE_URL = "http://39.100.229.38:8088";
+
+    public static String login(String account, String password) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(BASE_URL + "/StandardApiAction_login.action"
+                + "?account=" + account + "&password=" + password))
+            .GET()
+            .build();
+
+        HttpResponse<String> response = client.send(request,
+            HttpResponse.BodyHandlers.ofString());
+
+        JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+        if (json.get("result").getAsInt() == 0) {
+            return json.get("jsession").getAsString();
+        }
+        throw new RuntimeException("Login falhou: " + json.get("result"));
+    }
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+using System.Net.Http;
+using System.Text.Json;
+
+public class CTECAuth
+{
+    private const string BaseUrl = "http://39.100.229.38:8088";
+    private static readonly HttpClient _http = new();
+
+    public static async Task<string> LoginAsync(string account, string password)
+    {
+        var url = $"{BaseUrl}/StandardApiAction_login.action"
+                + $"?account={account}&password={password}";
+
+        var response = await _http.GetStringAsync(url);
+        var json = JsonDocument.Parse(response).RootElement;
+
+        if (json.GetProperty("result").GetInt32() == 0)
+            return json.GetProperty("jsession").GetString()!;
+
+        throw new Exception($"Login falhou: {json.GetProperty("result")}");
+    }
+}
 ```
 </Tabs.Tab>
 
@@ -85,18 +157,15 @@ print(data["jsession"])  # Token para usar nas próximas chamadas
 | `jsession` | `string` | Token de sessão — usar em todas as chamadas seguintes |
 | `account_name` | `string` | Nome da conta autenticada |
 
-### Resposta de Erro
-
-```json
-{
-  "result": 1
-}
-```
+### Códigos de Erro
 
 | result | Significado |
 |:------:|-------------|
 | `1` | Credenciais inválidas |
-| `2` | Conta bloqueada |
+| `2` | Credenciais inválidas |
+| `3` | Conta desabilitada |
+| `4` | Conta expirada |
+| `34` | SSO — conta já logada em outra sessão |
 
 ### Acesso ao Painel Web
 
@@ -132,9 +201,45 @@ Encerra a sessão do usuário e invalida o `jsession`.
 
 ### Exemplo
 
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
+
+<Tabs.Tab>
 ```bash
-curl "http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222"
+curl "http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=SEU_JSESSION"
 ```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+requests.get(
+    f"{BASE_URL}/StandardApiAction_logout.action",
+    params={"jsession": jsession}
+)
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+await fetch(`${BASE_URL}/StandardApiAction_logout.action?jsession=${jsession}`);
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_logout.action?jsession=" + jsession))
+    .GET().build();
+client.send(request, HttpResponse.BodyHandlers.ofString());
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+await _http.GetAsync($"{BaseUrl}/StandardApiAction_logout.action?jsession={jsession}");
+```
+</Tabs.Tab>
+
+</Tabs>
 
 ### Resposta
 
@@ -145,5 +250,5 @@ curl "http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a
 ```
 
 <Callout type="warning">
-Após o logout, o `jsession` se torna inválido. Qualquer requisição com ele retornará `result: 3`.
+Após o logout, o `jsession` se torna inválido. Qualquer requisição com ele retornará `result: 5`.
 </Callout>

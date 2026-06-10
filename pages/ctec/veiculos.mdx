@@ -54,7 +54,7 @@ Retorna todos os veículos e dispositivos autorizados para o usuário logado.
 
 ### Exemplo
 
-<Tabs items={['cURL', 'Resposta']}>
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
 
 <Tabs.Tab>
 ```bash
@@ -63,6 +63,74 @@ curl "http://39.100.229.38:8088/StandardApiAction_queryUserVehicle.action?jsessi
 </Tabs.Tab>
 
 <Tabs.Tab>
+```python
+import requests
+
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_queryUserVehicle.action",
+    params={"jsession": jsession}
+)
+data = response.json()
+
+for vehicle in data.get("vehicles", []):
+    print(f"Placa: {vehicle['nm']}, ID: {vehicle['id']}")
+    for dev in vehicle.get("dl", []):
+        print(f"  Dispositivo: {dev['id']}, Canais: {dev.get('cc', 0)}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_queryUserVehicle.action?jsession=${jsession}`
+);
+const data = await res.json();
+
+data.vehicles?.forEach(v => {
+  console.log(`Placa: ${v.nm}, ID: ${v.id}`);
+  v.dl?.forEach(d => console.log(`  Dispositivo: ${d.id}, Canais: ${d.cc}`));
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_queryUserVehicle.action"
+        + "?jsession=" + jsession))
+    .GET().build();
+
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+JsonArray vehicles = json.getAsJsonArray("vehicles");
+
+for (JsonElement el : vehicles) {
+    JsonObject v = el.getAsJsonObject();
+    System.out.println("Placa: " + v.get("nm").getAsString());
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_queryUserVehicle.action?jsession={jsession}");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var vehicle in json.GetProperty("vehicles").EnumerateArray())
+{
+    Console.WriteLine($"Placa: {vehicle.GetProperty("nm")}");
+    foreach (var dev in vehicle.GetProperty("dl").EnumerateArray())
+        Console.WriteLine($"  Dispositivo: {dev.GetProperty("id")}");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
 ```json
 {
   "result": 0,
@@ -90,9 +158,6 @@ curl "http://39.100.229.38:8088/StandardApiAction_queryUserVehicle.action?jsessi
   ]
 }
 ```
-</Tabs.Tab>
-
-</Tabs>
 
 ---
 
@@ -115,7 +180,7 @@ Retorna o(s) dispositivo(s) associado(s) a uma ou mais placas.
 
 ### Exemplo
 
-<Tabs items={['cURL', 'Resposta']}>
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
 
 <Tabs.Tab>
 ```bash
@@ -124,6 +189,64 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceByVehicle.action?jses
 </Tabs.Tab>
 
 <Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_getDeviceByVehicle.action",
+    params={"jsession": jsession, "vehiIdno": "ABC-1234"}
+)
+devices = response.json().get("devices", [])
+for d in devices:
+    tipo = "Vídeo" if d["type"] == 1 else "GPS"
+    print(f"Dispositivo: {d['did']} ({tipo})")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_getDeviceByVehicle.action?jsession=${jsession}&vehiIdno=ABC-1234`
+);
+const { devices } = await res.json();
+devices.forEach(d => {
+  const tipo = d.type === 1 ? 'Vídeo' : 'GPS';
+  console.log(`Dispositivo: ${d.did} (${tipo})`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_getDeviceByVehicle.action"
+        + "?jsession=" + jsession + "&vehiIdno=ABC-1234"))
+    .GET().build();
+
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+JsonArray devices = JsonParser.parseString(response.body())
+    .getAsJsonObject().getAsJsonArray("devices");
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_getDeviceByVehicle.action"
+    + $"?jsession={jsession}&vehiIdno=ABC-1234");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var dev in json.GetProperty("devices").EnumerateArray())
+{
+    var tipo = dev.GetProperty("type").GetInt32() == 1 ? "Vídeo" : "GPS";
+    Console.WriteLine($"Dispositivo: {dev.GetProperty("did")} ({tipo})");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
 ```json
 {
   "result": 0,
@@ -133,9 +256,6 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceByVehicle.action?jses
   ]
 }
 ```
-</Tabs.Tab>
-
-</Tabs>
 
 | Campo | Descrição |
 |-------|-----------|
@@ -165,7 +285,7 @@ Verifica se o(s) dispositivo(s) estão online ou offline.
 
 ### Exemplo
 
-<Tabs items={['cURL', 'Resposta']}>
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
 
 <Tabs.Tab>
 ```bash
@@ -174,6 +294,60 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceOlStatus.action?jsess
 </Tabs.Tab>
 
 <Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_getDeviceOlStatus.action",
+    params={"jsession": jsession, "devIdno": "500000"}
+)
+for dev in response.json().get("onlines", []):
+    status = "Online" if dev["online"] == 1 else "Offline"
+    print(f"Dispositivo {dev['did']}: {status}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_getDeviceOlStatus.action?jsession=${jsession}&devIdno=500000`
+);
+const { onlines } = await res.json();
+onlines.forEach(d => {
+  console.log(`${d.did}: ${d.online === 1 ? 'Online' : 'Offline'}`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(BASE_URL + "/StandardApiAction_getDeviceOlStatus.action"
+        + "?jsession=" + jsession + "&devIdno=500000"))
+    .GET().build();
+
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_getDeviceOlStatus.action"
+    + $"?jsession={jsession}&devIdno=500000");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var dev in json.GetProperty("onlines").EnumerateArray())
+{
+    var status = dev.GetProperty("online").GetInt32() == 1 ? "Online" : "Offline";
+    Console.WriteLine($"{dev.GetProperty("did")}: {status}");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
 ```json
 {
   "result": 0,
@@ -182,9 +356,6 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceOlStatus.action?jsess
   ]
 }
 ```
-</Tabs.Tab>
-
-</Tabs>
 
 ---
 
@@ -237,7 +408,7 @@ Retorna a posição GPS mais recente, velocidade, direção, status de sensores 
 
 ### Exemplo
 
-<Tabs items={['cURL', 'Resposta']}>
+<Tabs items={['cURL', 'Python', 'JavaScript', 'Java', 'C#']}>
 
 <Tabs.Tab>
 ```bash
@@ -246,6 +417,88 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceStatus.action?jsessio
 </Tabs.Tab>
 
 <Tabs.Tab>
+```python
+response = requests.get(
+    f"{BASE_URL}/StandardApiAction_getDeviceStatus.action",
+    params={
+        "jsession": jsession,
+        "devIdno": "500000",
+        "toMap": 1,
+        "geoaddress": 1
+    }
+)
+data = response.json()
+
+for device in data.get("status", []):
+    lat = device["lat"] / 1_000_000
+    lng = device["lng"] / 1_000_000
+    speed = device["sp"] / 10
+    online = "Online" if device["ol"] == 1 else "Offline"
+    print(f"GPS: {lat:.6f}, {lng:.6f} | {speed} km/h | {online}")
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  `${BASE_URL}/StandardApiAction_getDeviceStatus.action`
+  + `?jsession=${jsession}&devIdno=500000&toMap=1&geoaddress=1`
+);
+const data = await res.json();
+
+data.status?.forEach(d => {
+  const lat = d.lat / 1_000_000;
+  const lng = d.lng / 1_000_000;
+  const speed = d.sp / 10;
+  console.log(`GPS: ${lat}, ${lng} | ${speed} km/h | ${d.ol ? 'Online' : 'Offline'}`);
+});
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+String url = BASE_URL + "/StandardApiAction_getDeviceStatus.action"
+    + "?jsession=" + jsession + "&devIdno=500000&toMap=1&geoaddress=1";
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create(url)).GET().build();
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+
+JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+JsonArray statusArr = json.getAsJsonArray("status");
+for (JsonElement el : statusArr) {
+    JsonObject d = el.getAsJsonObject();
+    double lat = d.get("lat").getAsDouble() / 1_000_000;
+    double lng = d.get("lng").getAsDouble() / 1_000_000;
+    double speed = d.get("sp").getAsDouble() / 10;
+    System.out.printf("GPS: %.6f, %.6f | %.1f km/h%n", lat, lng, speed);
+}
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var response = await _http.GetStringAsync(
+    $"{BaseUrl}/StandardApiAction_getDeviceStatus.action"
+    + $"?jsession={jsession}&devIdno=500000&toMap=1&geoaddress=1");
+var json = JsonDocument.Parse(response).RootElement;
+
+foreach (var d in json.GetProperty("status").EnumerateArray())
+{
+    var lat = d.GetProperty("lat").GetDouble() / 1_000_000;
+    var lng = d.GetProperty("lng").GetDouble() / 1_000_000;
+    var speed = d.GetProperty("sp").GetDouble() / 10;
+    var online = d.GetProperty("ol").GetInt32() == 1 ? "Online" : "Offline";
+    Console.WriteLine($"GPS: {lat:F6}, {lng:F6} | {speed:F1} km/h | {online}");
+}
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta
+
 ```json
 {
   "result": 0,
@@ -268,9 +521,6 @@ curl "http://39.100.229.38:8088/StandardApiAction_getDeviceStatus.action?jsessio
   ]
 }
 ```
-</Tabs.Tab>
-
-</Tabs>
 
 ### Mapa de Localização
 
