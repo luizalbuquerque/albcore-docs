@@ -1,29 +1,139 @@
-# CTEC — Plataforma de Rastreamento
+---
+title: CTEC Rastreamento — Documentação da API
+description: Documentação completa da API de rastreamento veicular CTEC. Integre rastreamento GPS, alarmes, vídeo ao vivo e controle remoto da sua frota.
+---
 
-Documentação da API de rastreamento veicular utilizada pelo cliente **CTEC**. 
-A plataforma é baseada no protocolo **808GPS (CMSV6)** e oferece rastreamento em tempo real,
-gerenciamento de alarmes, vídeo ao vivo, controle remoto de veículos e relatórios.
+import { Callout, Cards, Card, Steps } from 'nextra/components'
 
-## Base URL
+# CTEC Rastreamento
 
+Documentação completa da API de rastreamento veicular para clientes **CTEC**.
+Integre rastreamento GPS em tempo real, alarmes, vídeo ao vivo e controle remoto da sua frota.
+
+<div className="base-url-box">
+  <span className="label">Base URL</span>
+  <code>http://39.100.229.38:8088</code>
+</div>
+
+<Callout type="info">
+Todas as requisições (exceto login) exigem o parâmetro **`jsession`**, obtido via endpoint de [Autenticação](/ctec/autenticacao).
+</Callout>
+
+---
+
+## Início Rápido
+
+<Steps>
+
+### Autentique-se
+
+Faça login para obter o token `jsession`:
+
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_login.action?account=SEU_USER&password=SUA_SENHA"
 ```
-http://39.100.229.38:8088
+
+```json
+{ "result": 0, "jsession": "cf6b70a3-c82b-4392-8ab6-bbddce336222" }
 ```
 
-## Autenticação
+### Consulte seus veículos
 
-Todas as requisições (exceto login) exigem o parâmetro `jsession`, obtido ao fazer login.
+Use o `jsession` para listar veículos:
 
-```
-GET /StandardApiAction_login.action?account=SEU_USER&password=SUA_SENHA
-→ { "result": 0, "jsession": "uuid-aqui" }
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_queryUserVehicle.action?jsession=SEU_JSESSION"
 ```
 
-Após obter o `jsession`, passe-o como query parameter em toda requisição:
+### Rastreie em tempo real
 
+Obtenha a posição GPS atual de um dispositivo:
+
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_getDeviceStatus.action?jsession=SEU_JSESSION&devIdno=DEVICE_ID&toMap=1"
 ```
-?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222
-```
+
+</Steps>
+
+---
+
+## Módulos da API
+
+<div className="ctec-cards">
+
+<a href="/ctec/autenticacao" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🔐 Autenticação</h3>
+  <p>Login, logout e gerenciamento de sessão (`jsession`).</p>
+</div>
+</a>
+
+<a href="/ctec/veiculos" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🚗 Veículos & GPS</h3>
+  <p>Consulta de veículos, status GPS em tempo real, posição e velocidade.</p>
+</div>
+</a>
+
+<a href="/ctec/rastreamento" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>📍 Rastreamento</h3>
+  <p>Histórico de trajetos com paginação e replay no mapa.</p>
+</div>
+</a>
+
+<a href="/ctec/alarmes" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🔔 Alarmes</h3>
+  <p>Consulta de alarmes históricos e monitoramento em tempo real.</p>
+</div>
+</a>
+
+<a href="/ctec/quilometragem" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>📊 Quilometragem</h3>
+  <p>Relatórios de km rodado, tempo online e estacionamento.</p>
+</div>
+</a>
+
+<a href="/ctec/video" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>📹 Vídeo ao Vivo</h3>
+  <p>Streaming HLS, RTSP e player H5 integrado.</p>
+</div>
+</a>
+
+<a href="/ctec/controle" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🎮 Controle Remoto</h3>
+  <p>Comandos remotos: corte de combustível, TTS, PTZ de câmera.</p>
+</div>
+</a>
+
+<a href="/ctec/dispositivos" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>📟 Dispositivos</h3>
+  <p>CRUD de dispositivos e veículos, instalação e desinstalação.</p>
+</div>
+</a>
+
+<a href="/ctec/areas" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🗺️ Áreas & Cercas</h3>
+  <p>Geofencing — criação, consulta e eventos de entrada/saída.</p>
+</div>
+</a>
+
+<a href="/ctec/organizacao" style={{textDecoration:'none',color:'inherit'}}>
+<div className="ctec-card">
+  <h3>🏢 Organização</h3>
+  <p>Empresas, roles, contas de usuário e autorizações.</p>
+</div>
+</a>
+
+</div>
+
+---
 
 ## Formato de Resposta
 
@@ -31,47 +141,23 @@ Todas as respostas são **JSON** com encoding **UTF-8**.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `result` | number | `0` = sucesso; outro valor = erro (ver [Códigos de Erro](/ctec/codigos-erro)) |
-| `callback` | string | Presente quando `callback` é enviado na requisição (JSONP) |
+| `result` | `number` | `0` = sucesso. Outro valor = erro (ver [Códigos de Erro](/ctec/codigos-erro)) |
+| `callback` | `string` | Presente quando `callback` é enviado na requisição (JSONP) |
 
 ## Parâmetros Comuns
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `jsession` | string | Sim | Session ID retornado pelo login |
-| `callback` | string | Não | Nome da função JSONP para chamadas cross-domain |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Session ID retornado pelo login |
+| `callback` | `string` | Não | Nome da função JSONP para chamadas cross-domain |
 
-## Módulos Disponíveis
+<Callout type="warning">
+**Encoding de parâmetros:** valores com caracteres especiais (acentos, etc.) devem ser codificados com `encodeURI(encodeURI(valor))` via URL ou `encodeURI(valor)` via Ajax.
+</Callout>
 
-| Módulo | Descrição |
-|--------|-----------|
-| [Autenticação](/ctec/autenticacao) | Login e logout |
-| [Veículos & GPS](/ctec/veiculos) | Consulta de veículos, status GPS em tempo real |
-| [Rastreamento](/ctec/rastreamento) | Histórico de trajetos (track) com paginação |
-| [Alarmes](/ctec/alarmes) | Consulta de alarmes históricos e em tempo real |
-| [Quilometragem](/ctec/quilometragem) | Relatórios de km, tempo online, estacionamento |
-| [Vídeo ao Vivo](/ctec/video) | Streaming HLS, RTSP, player H5 |
-| [Controle Remoto](/ctec/controle) | Comandos ao veículo (corte, TTS, PTZ) |
-| [Dispositivos](/ctec/dispositivos) | CRUD de devices e veículos |
-| [Áreas & Cercas](/ctec/areas) | Geofencing (criação/consulta de áreas) |
-| [Organização](/ctec/organizacao) | Empresas, roles, contas de usuário |
-| [Códigos de Erro](/ctec/codigos-erro) | Tabela completa de erros |
+---
 
-## Encoding de Parâmetros
+## Referência
 
-Valores com caracteres especiais (ex.: chinês, acentos) devem ser codificados:
-
-- **Via URL direta:** `encodeURI(encodeURI(valor))`
-- **Via Ajax (recomendado):** `encodeURI(valor)` no campo `data`
-
-## JSONP
-
-Para chamadas cross-domain via JS, adicione `&callback=nomeFuncao`:
-
-```js
-$.ajax({
-  url: 'http://39.100.229.38:8088/StandardApiAction_login.action?callback=getData',
-  dataType: 'JSONP',
-  success: function(data) { console.log(data); }
-});
-```
+- [Códigos de Erro](/ctec/codigos-erro) — Tabela completa de erros da API
+- [Suporte](/ctec/suporte) — Canais de suporte e informações de contato

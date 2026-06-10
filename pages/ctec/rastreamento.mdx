@@ -1,64 +1,71 @@
-# Rastreamento (Histórico de Trajeto)
+---
+title: Rastreamento
+description: Consulta de histórico de trajetos GPS com paginação e replay no mapa.
+---
 
-## Consultar Trajeto do Dispositivo
+import { Callout, Tabs } from 'nextra/components'
 
-Retorna o histórico de posições GPS de um dispositivo em um período, com paginação.
+# Rastreamento
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_queryTrackDetail.action` |
-| **Método** | GET / POST |
+Consulta o histórico de posições GPS de um dispositivo em um período, com paginação.
+
+---
+
+## Consultar Trajeto
+
+Retorna o histórico de posições GPS de um dispositivo em um período.
+
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_queryTrackDetail.action</code>
+</div>
 
 ### Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `jsession` | string | Sim | Token de sessão |
-| `devIdno` | string | Sim | Número do dispositivo |
-| `begintime` | string | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
-| `endtime` | string | Sim | Fim (`yyyy-MM-dd HH:mm:ss`) |
-| `currentPage` | number | Não | Página atual (se vazio, sem paginação) |
-| `pageRecords` | number | Não | Registros por página |
-| `toMap` | number | Não | `1`=Google, `2`=Baidu |
-| `geoaddress` | number | Não | `1` = resolver endereço |
-| `distance` | number | Não | Filtro de distância mínima (km) |
-| `parkTime` | number | Não | Filtro de tempo de parada (segundos) |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `devIdno` | `string` | Sim | Número do dispositivo |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | `string` | Sim | Fim (`yyyy-MM-dd HH:mm:ss`) |
+| `currentPage` | `number` | Não | Página atual (se vazio, retorna tudo) |
+| `pageRecords` | `number` | Não | Registros por página |
+| `toMap` | `number` | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | `number` | Não | `1` = resolver endereço |
+| `distance` | `number` | Não | Filtro de distância mínima (km) |
+| `parkTime` | `number` | Não | Filtro de tempo de parada (segundos) |
 
-### Exemplo de Requisição
-
-```
-GET /StandardApiAction_queryTrackDetail.action?jsession=xxx&devIdno=500000&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59&currentPage=1&pageRecords=100&toMap=1
-```
-
-### Resposta
+### Campos da Resposta — `tracks[]`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `tracks` | array | Lista de pontos GPS |
-| `pagination.totalPages` | number | Total de páginas |
-| `pagination.currentPage` | number | Página atual |
-| `pagination.totalRecords` | number | Total de registros |
+| `id` | `string` | DevIdno |
+| `lng` | `number` | Longitude (÷ 1.000.000 para graus) |
+| `lat` | `number` | Latitude (÷ 1.000.000 para graus) |
+| `sp` | `number` | Velocidade (÷ 10 → km/h) |
+| `gt` | `string` | Hora GPS |
+| `hx` | `number` | Direção (graus) |
+| `mlng` | `string` | Longitude convertida para mapa |
+| `mlat` | `string` | Latitude convertida para mapa |
+| `pk` | `number` | Tempo estacionado (segundos) |
+| `lc` | `number` | Quilometragem acumulada (metros) |
+| `yl` | `number` | Combustível (÷ 100 → litros) |
 
-### Campos de cada ponto em `tracks[]`
+### Exemplo
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | string | DevIdno |
-| `lng` | number | Longitude (÷ 1.000.000) |
-| `lat` | number | Latitude (÷ 1.000.000) |
-| `sp` | number | Velocidade (÷ 10 → km/h) |
-| `gt` | string | Hora GPS |
-| `hx` | number | Direção (graus) |
-| `mlng` | string | Longitude no mapa |
-| `mlat` | string | Latitude no mapa |
-| `pk` | number | Tempo estacionado (seg) |
-| `lc` | number | Quilometragem acumulada (metros) |
-| `yl` | number | Combustível (÷ 100 → litros) |
-| `s1`–`s4` | number | Bits de status |
-| `t1`–`t4` | number | Temperaturas |
+<Tabs items={['cURL', 'Resposta']}>
 
-### Exemplo de Resposta
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_queryTrackDetail.action?\
+jsession=SEU_JSESSION&devIdno=500000&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-01%2023:59:59&\
+currentPage=1&pageRecords=100&toMap=1"
+```
+</Tabs.Tab>
 
+<Tabs.Tab>
 ```json
 {
   "result": 0,
@@ -86,20 +93,27 @@ GET /StandardApiAction_queryTrackDetail.action?jsession=xxx&devIdno=500000&begin
   }
 }
 ```
+</Tabs.Tab>
+
+</Tabs>
+
+<Callout type="info">
+Use `currentPage` e `pageRecords` para paginação. Sem eles, a API retorna todos os pontos de uma vez (pode ser pesado em períodos longos).
+</Callout>
 
 ---
 
 ## Replay de Trajeto (Mapa)
 
-É possível abrir um mapa de replay integrado:
+Abre um mapa de replay integrado no navegador:
 
 ```
-http://39.100.229.38:8088/808gps/open/trackReplay/Track.html?vehiIdno=ABC1234&jsession=xxx&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59
+http://39.100.229.38:8088/808gps/open/trackReplay/Track.html?vehiIdno=ABC1234&jsession=SEU_JSESSION&begintime=2026-05-01 00:00:00&endtime=2026-05-01 23:59:59
 ```
 
 | Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `jsession` | Sim | Token |
+|-----------|:-----------:|-----------|
+| `jsession` | Sim | Token de sessão |
 | `vehiIdno` | Sim | Placa do veículo |
 | `begintime` | Sim | Início do período |
 | `endtime` | Sim | Fim do período |

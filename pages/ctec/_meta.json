@@ -8,7 +8,7 @@
   "integracao": "Guia de Integração",
   "---endpoints": {
     "type": "separator",
-    "title": "Endpoints"
+    "title": "Endpoints da API"
   },
   "veiculos": "Veículos & GPS",
   "rastreamento": "Rastreamento",
@@ -24,5 +24,5 @@
     "title": "Referência"
   },
   "codigos-erro": "Códigos de Erro",
-  "suporte": "Suporte & Rede de Apoio"
+  "suporte": "Suporte"
 }

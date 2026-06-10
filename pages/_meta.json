@@ -4,7 +4,11 @@
   "architecture": "Arquitetura",
   "modules": "Módulos",
   "api-reference": "API Reference",
-  "ctec": "CTEC (Rastreamento)",
+  "ctec": {
+    "title": "CTEC",
+    "type": "page",
+    "display": "hidden"
+  },
   "deployment": "Deploy & Infra",
   "contributing": "Contribuindo",
   "roadmap": "Roadmap"

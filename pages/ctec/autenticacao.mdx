@@ -1,28 +1,74 @@
+---
+title: Autenticação
+description: Endpoints de login e logout da API CTEC. Obtenha o token jsession para autenticar todas as requisições.
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
 # Autenticação
+
+O sistema de autenticação utiliza sessões baseadas em token (`jsession`).
+Após o login, o `jsession` deve ser enviado como query parameter em **todas** as requisições subsequentes.
+
+<Callout type="info">
+O token `jsession` tem validade limitada. Se receber `result: 3` em qualquer endpoint, faça login novamente.
+</Callout>
+
+---
 
 ## Login
 
-Autentica o usuário e retorna um `jsession` válido para as demais chamadas.
+Autentica o usuário e retorna um `jsession` válido.
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_login.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_login.action</code>
+</div>
 
 ### Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `account` | string | Sim | Nome de usuário |
-| `password` | string | Sim | Senha |
+|-----------|------|:-----------:|-----------|
+| `account` | `string` | Sim | Nome de usuário |
+| `password` | `string` | Sim | Senha |
 
-### Exemplo de Requisição
+### Exemplo
 
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123"
 ```
-GET http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123
-```
+</Tabs.Tab>
 
-### Resposta
+<Tabs.Tab>
+```javascript
+const res = await fetch(
+  'http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&password=senha123'
+);
+const data = await res.json();
+console.log(data.jsession); // Token para usar nas próximas chamadas
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python
+import requests
+
+resp = requests.get(
+    "http://39.100.229.38:8088/StandardApiAction_login.action",
+    params={"account": "ctec", "password": "senha123"}
+)
+data = resp.json()
+print(data["jsession"])  # Token para usar nas próximas chamadas
+```
+</Tabs.Tab>
+
+</Tabs>
+
+### Resposta de Sucesso
 
 ```json
 {
@@ -35,12 +81,26 @@ GET http://39.100.229.38:8088/StandardApiAction_login.action?account=ctec&passwo
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `jsession` | string | Token de sessão (usar em todas as chamadas seguintes) |
-| `account_name` | string | Nome da conta autenticada |
+| `result` | `number` | `0` = sucesso |
+| `jsession` | `string` | Token de sessão — usar em todas as chamadas seguintes |
+| `account_name` | `string` | Nome da conta autenticada |
 
-### Login no Painel Web
+### Resposta de Erro
 
-Após obter o `jsession`, é possível acessar o painel web diretamente:
+```json
+{
+  "result": 1
+}
+```
+
+| result | Significado |
+|:------:|-------------|
+| `1` | Credenciais inválidas |
+| `2` | Conta bloqueada |
+
+### Acesso ao Painel Web
+
+Após login, é possível redirecionar o usuário para o painel web:
 
 ```
 http://39.100.229.38:8088/808gps/index.html?userSession={jsession}&clientLogin=2
@@ -48,31 +108,32 @@ http://39.100.229.38:8088/808gps/index.html?userSession={jsession}&clientLogin=2
 
 | Parâmetro | Descrição |
 |-----------|-----------|
-| `clientLogin=1` | Sem vídeo |
-| `clientLogin=2` | Com vídeo e localização |
+| `clientLogin=1` | Painel sem vídeo |
+| `clientLogin=2` | Painel com vídeo e localização |
 | `menuIds=25,26` | Menus específicos (25=vídeo, 26=playback) |
 
 ---
 
 ## Logout
 
-Encerra a sessão do usuário.
+Encerra a sessão do usuário e invalida o `jsession`.
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_logout.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_logout.action</code>
+</div>
 
 ### Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `jsession` | string | Sim | Token de sessão |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
 
 ### Exemplo
 
-```
-GET http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a3-c82b-4392-8ab6-bbddce336222"
 ```
 
 ### Resposta
@@ -82,3 +143,7 @@ GET http://39.100.229.38:8088/StandardApiAction_logout.action?jsession=cf6b70a3-
   "result": 0
 }
 ```
+
+<Callout type="warning">
+Após o logout, o `jsession` se torna inválido. Qualquer requisição com ele retornará `result: 3`.
+</Callout>

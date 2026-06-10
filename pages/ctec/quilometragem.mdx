@@ -1,13 +1,25 @@
+---
+title: Quilometragem
+description: Relatórios de quilometragem diária, detalhada, estacionamento e última localização.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
 # Quilometragem & Estacionamento
+
+Relatórios de quilometragem diária, detalhada, estacionamento e última localização dos veículos.
+
+---
 
 ## Quilometragem por Dia
 
-Retorna a quilometragem rodada por dia (somente dados de dias alternados).
+Retorna a quilometragem rodada por dia.
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_runMileage.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_runMileage.action</code>
+</div>
 
 ### Parâmetros
 

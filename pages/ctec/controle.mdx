@@ -1,15 +1,25 @@
+---
+title: Controle Remoto
+description: Envio de comandos remotos aos veículos — corte de combustível, TTS e controle PTZ de câmera.
+---
+
+import { Callout } from 'nextra/components'
+
 # Controle Remoto
 
 Permite enviar comandos remotos aos dispositivos embarcados nos veículos.
 
-> ⚠️ O dispositivo precisa estar **online** para receber comandos.
+<Callout type="warning">
+O dispositivo precisa estar **online** para receber comandos.
+</Callout>
 
 ## Enviar Comando ao Veículo
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_vehicleControl.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleControl.action</code>
+</div>
 
 ### Parâmetros
 

@@ -1,56 +1,100 @@
+---
+title: Alarmes
+description: Consulta de alarmes históricos e monitoramento em tempo real de alarmes da frota.
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
 # Alarmes
 
-## Consultar Alarmes Históricos (Paginado)
+Consulta alarmes históricos e monitora alarmes em tempo real da frota.
+
+---
+
+## Alarmes Históricos (Paginado)
 
 Retorna alarmes de um dispositivo/veículo em um período.
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_queryAlarmDetail.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_queryAlarmDetail.action</code>
+</div>
 
 ### Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `jsession` | string | Sim | Token |
-| `devIdno` | string | Não | Dispositivo(s), separados por `,` |
-| `vehiIdno` | string | Não | Placa(s) — fallback se `devIdno` vazio |
-| `begintime` | string | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
-| `endtime` | string | Sim | Fim (máx. 90 dias de intervalo) |
-| `armType` | string | Sim | Tipo(s) de alarme, separados por `,` |
-| `handle` | number | Não | `0`=não tratado, `1`=tratado, vazio=todos |
-| `currentPage` | number | Não | Página (default: 1) |
-| `pageRecords` | number | Não | Registros por página (default: 10) |
-| `toMap` | number | Não | `1`=Google, `2`=Baidu |
-| `geoaddress` | number | Não | `1` = resolver endereço |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `devIdno` | `string` | Não | Dispositivo(s), separados por `,` |
+| `vehiIdno` | `string` | Não | Placa(s) — fallback se `devIdno` vazio |
+| `begintime` | `string` | Sim | Início (`yyyy-MM-dd HH:mm:ss`) |
+| `endtime` | `string` | Sim | Fim (máx. 90 dias de intervalo) |
+| `armType` | `string` | Sim | Tipo(s) de alarme, separados por `,` |
+| `handle` | `number` | Não | `0`=não tratado, `1`=tratado, vazio=todos |
+| `currentPage` | `number` | Não | Página (default: 1) |
+| `pageRecords` | `number` | Não | Registros por página (default: 10) |
+| `toMap` | `number` | Não | `1`=Google, `2`=Baidu |
+| `geoaddress` | `number` | Não | `1` = resolver endereço |
 
-### Exemplo
-
-```
-GET /StandardApiAction_queryAlarmDetail.action?jsession=xxx&devIdno=500000&begintime=2026-05-01 00:00:00&endtime=2026-05-28 23:59:59&armType=2,9,11&currentPage=1&pageRecords=50
-```
-
-### Resposta
+### Campos da Resposta
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `atp` | number | Tipo do alarme |
-| `did` | string | Dispositivo |
-| `vid` | string | Placa |
-| `stm` | number | Timestamp início (UTC ms) |
-| `etm` | number | Timestamp fim (UTC ms) |
-| `guid` | string | ID único do alarme |
-| `hd` | number | `0`=não tratado, `1`=tratado |
-| `hdu` | string | Usuário que tratou |
-| `hdc` | string | Conteúdo do tratamento |
-| `hdt` | string | Data do tratamento |
-| `img` | string | URLs de imagens (separadas por `;`) |
-| `slng`/`slat` | number | Coordenadas início |
-| `elng`/`elat` | number | Coordenadas fim |
-| `ssp`/`esp` | number | Velocidade início/fim (÷ 10) |
-| `sps`/`eps` | string | Endereço início/fim |
-| `p1`–`p4` | number | Parâmetros do alarme (tipo-específico) |
+| `atp` | `number` | Tipo do alarme |
+| `did` | `string` | Dispositivo |
+| `vid` | `string` | Placa |
+| `stm` | `number` | Timestamp início (UTC ms) |
+| `etm` | `number` | Timestamp fim (UTC ms) |
+| `guid` | `string` | ID único do alarme |
+| `hd` | `number` | `0`=não tratado, `1`=tratado |
+| `hdu` | `string` | Usuário que tratou |
+| `hdc` | `string` | Conteúdo do tratamento |
+| `img` | `string` | URLs de imagens (separadas por `;`) |
+| `slng`/`slat` | `number` | Coordenadas início |
+| `elng`/`elat` | `number` | Coordenadas fim |
+
+### Exemplo
+
+<Tabs items={['cURL', 'Resposta']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_queryAlarmDetail.action?\
+jsession=SEU_JSESSION&devIdno=500000&\
+begintime=2026-05-01%2000:00:00&endtime=2026-05-28%2023:59:59&\
+armType=2,9,11&currentPage=1&pageRecords=50"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```json
+{
+  "result": 0,
+  "alarms": [
+    {
+      "atp": 2,
+      "did": "500000",
+      "vid": "ABC-1234",
+      "stm": 1716912048000,
+      "etm": 1716912108000,
+      "guid": "A1B2C3D4E5F6",
+      "hd": 0,
+      "slng": 113921858,
+      "slat": 22568745,
+      "img": ""
+    }
+  ],
+  "pagination": {
+    "totalPages": 3,
+    "currentPage": 1,
+    "totalRecords": 127
+  }
+}
+```
+</Tabs.Tab>
+
+</Tabs>
 
 ---
 
@@ -58,21 +102,31 @@ GET /StandardApiAction_queryAlarmDetail.action?jsession=xxx&devIdno=500000&begin
 
 Retorna os alarmes ativos de um dispositivo **online**.
 
-| | |
-|---|---|
-| **URL** | `/StandardApiAction_vehicleAlarm.action` |
-| **Método** | GET / POST |
+<div style={{display:'flex',gap:'0.5rem',alignItems:'center',margin:'0.5rem 0'}}>
+  <span className="method-badge method-get">GET</span>
+  <span className="method-badge method-post">POST</span>
+  <code className="endpoint-url">/StandardApiAction_vehicleAlarm.action</code>
+</div>
 
 ### Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `jsession` | string | Sim | Token |
-| `DevIDNO` | string | Não | Número do dispositivo |
-| `toMap` | number | Não | Conversão de coordenadas |
+|-----------|------|:-----------:|-----------|
+| `jsession` | `string` | Sim | Token de sessão |
+| `DevIDNO` | `string` | Não | Número do dispositivo |
+| `toMap` | `number` | Não | Conversão de coordenadas |
 
-### Resposta
+### Exemplo
 
+<Tabs items={['cURL', 'Resposta']}>
+
+<Tabs.Tab>
+```bash
+curl "http://39.100.229.38:8088/StandardApiAction_vehicleAlarm.action?jsession=SEU_JSESSION&DevIDNO=500000"
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
 ```json
 {
   "result": 0,
@@ -94,13 +148,16 @@ Retorna os alarmes ativos de um dispositivo **online**.
   ]
 }
 ```
+</Tabs.Tab>
+
+</Tabs>
 
 ---
 
-## Tipos de Alarme Comuns
+## Tipos de Alarme
 
 | Código | Descrição |
-|--------|-----------|
+|:------:|-----------|
 | 2 | Excesso de velocidade |
 | 9 | Entrada em área proibida |
 | 11 | Saída de área (geofence) |
@@ -116,3 +173,7 @@ Retorna os alarmes ativos de um dispositivo **online**.
 | 50 | Fadiga (DSM) |
 | 51 | Fumando (DSM) |
 | 52 | Celular ao volante (DSM) |
+
+<Callout type="info">
+Use o campo `armType` na consulta para filtrar por um ou mais tipos. Separe múltiplos tipos com vírgula: `armType=2,9,11`.
+</Callout>
