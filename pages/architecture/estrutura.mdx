@@ -1,0 +1,370 @@
+---
+title: Arquitetura - Estrutura
+description: Estrutura do projeto, camadas Clean Architecture e organização de pastas
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# 🏛️ Estrutura — Clean Architecture
+
+**AlbCore** segue **Clean Architecture (Hexagonal)** com 4 camadas bem definidas.
+
+---
+
+## Camadas do Projeto
+
+```
+Presentation (Controllers, DTOs de request/response)
+    ↓ depende de
+Application (Use Cases, Services, orquestracao)
+    ↓ depende de
+Domain (Entities, Value Objects, Interfaces/Ports)
+    ↓ depende de
+Infrastructure (Repositories, JPA, adapters)
+    ↑ + depende de
+Shared (Security, Exceptions, Utils, Multi-Tenancy)
+```
+
+<Callout type="warning">
+  **Regra de Ouro:** Nunca uma camada inferior depende de uma superior!
+  Domain NEVER importa de Application.
+</Callout>
+
+---
+
+## Como Cada Domínio é Organizado
+
+Cada **domínio** (tenant, identity, billing, módulos) segue a mesma estrutura:
+
+<Tabs items={['Domain', 'Application', 'Infrastructure', 'Presentation']}>
+<Tabs.Tab>
+```java
+// domain/ — Lógica de negócio PURA (sem Spring)
+
+UserEntity.java           // Aggregate Root
+UserRepository.java       // Port (interface)
+Role.java                // Enum de roles
+Permission.java          // Value Object
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+// application/ — Use Cases & Orquestracao
+
+AuthService.java          // Serviço (orquestrador)
+CreateUserUseCase.java   // Use case (opcional)
+UserMapper.java          // DTO ↔ Entity
+UserRequest.java         // DTO Request
+UserResponse.java        // DTO Response
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+// infrastructure/ — Persistência & Adapters
+
+UserJpa.java              // Entity JPA
+UserSpringDataRepository.java  // Spring Data
+UserRepositoryAdapter.java     // Adapter (implementa Port)
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+// presentation/ — Controllers REST
+
+AuthController.java       // @RestController
+/v1/auth/login
+/v1/auth/register
+/v1/auth/refresh
+```
+</Tabs.Tab>
+</Tabs>
+
+---
+
+## Estrutura de Pastas — Completa
+
+```
+src/main/java/br/com/albcore/
+│
+├── AlbCoreApplication.java
+│
+├── shared/                           # ⚙️ INFRAESTRUTURA TÉCNICA
+│   ├── component/
+│   │   ├── TenantContext.java       # ThreadLocal (tenant_id atual)
+│   │   ├── TenantInterceptor.java   # Extrai X-Tenant-Id
+│   │   ├── LoggingInterceptor.java  # Log de requests
+│   │   └── GlobalExceptionHandler.java
+│   ├── config/
+│   │   ├── SecurityConfig.java
+│   │   ├── HibernateMultiTenancyConfig.java
+│   │   ├── CorsConfig.java
+│   │   ├── CacheConfig.java
+│   │   ├── OpenApiConfig.java       # Swagger
+│   │   ├── PersistenceConfig.java
+│   │   └── WebConfig.java
+│   ├── exception/
+│   │   ├── ApiException.java
+│   │   ├── BusinessException.java
+│   │   ├── ResourceNotFoundException.java
+│   │   ├── TenantException.java
+│   │   └── UnauthorizedException.java
+│   ├── multitenancy/
+│   │   ├── SchemaPerTenantConnectionProvider.java
+│   │   ├── CurrentTenantIdentifierResolverImpl.java
+│   │   └── TenantProvisioningService.java
+│   ├── security/
+│   │   ├── JwtProvider.java         # Gera/valida JWT
+│   │   ├── JwtAuthenticationFilter.java
+│   │   ├── RateLimitFilter.java
+│   │   ├── RateLimitingService.java
+│   │   ├── TokenBlacklistService.java
+│   │   └── AuthorizationService.java
+│   └── util/
+│       ├── ApiResponse.java
+│       ├── ValidationUtil.java
+│       ├── DtoMapper.java
+│       └── DateUtil.java
+│
+├── core/                             # 💎 FUNCIONALIDADES OBRIGATÓRIAS
+│   ├── identity/
+│   │   ├── domain/
+│   │   │   ├── UserEntity.java
+│   │   │   ├── Role.java            # 8 roles
+│   │   │   └── IUserRepository.java
+│   │   ├── application/
+│   │   │   ├── AuthService.java
+│   │   │   └── dto/
+│   │   ├── infrastructure/
+│   │   │   ├── UserJpa.java
+│   │   │   └── UserRepositoryAdapter.java
+│   │   └── presentation/
+│   │       └── AuthController.java  # /v1/auth/*
+│   └── featureflag/
+│       ├── domain/
+│       │   ├── FeatureFlagEntity.java
+│       │   └── IFeatureFlagRepository.java
+│       ├── application/
+│       │   └── FeatureFlagService.java
+│       ├── infrastructure/
+│       │   └── FeatureFlagRepositoryAdapter.java
+│       └── presentation/
+│           └── FeatureFlagController.java
+│
+├── master/                           # 📱 PAINEL DE CONTROLE ALBCORE
+│   ├── tenant/
+│   │   ├── domain/
+│   │   │   ├── TenantEntity.java
+│   │   │   ├── TenantConfig.java
+│   │   │   └── ITenantRepository.java
+│   │   ├── application/
+│   │   │   └── TenantService.java
+│   │   ├── infrastructure/
+│   │   │   └── TenantRepositoryAdapter.java
+│   │   └── presentation/
+│   │       └── TenantController.java # /v1/master/tenants
+│   ├── product/
+│   │   └── template/
+│   │       ├── domain/
+│   │       │   └── ProductTemplate.java
+│   │       ├── application/
+│   │       ├── infrastructure/
+│   │       └── presentation/
+│   └── billing/
+│       ├── domain/
+│       │   ├── SubscriptionEntity.java
+│       │   ├── SubscriptionPlanEntity.java
+│       │   └── SubscriptionStatus.java
+│       ├── application/
+│       ├── infrastructure/
+│       └── presentation/
+│
+└── modules/                          # 🧩 MÓDULOS DE NEGÓCIO
+    ├── crm/
+    │   ├── CrmModuleDescriptor.java
+    │   ├── domain/
+    │   │   ├── ContactEntity.java
+    │   │   ├── LeadEntity.java
+    │   │   └── IContactRepository.java
+    │   ├── application/
+    │   │   ├── CrmService.java
+    │   │   └── dto/
+    │   ├── infrastructure/
+    │   │   └── ContactRepositoryAdapter.java
+    │   └── presentation/
+    │       └── CrmController.java    # /v1/crm/*
+    ├── scheduling/
+    │   ├── SchedulingModuleDescriptor.java
+    │   └── ...
+    ├── payment/
+    │   ├── PaymentModuleDescriptor.java
+    │   └── ...
+    ├── document/
+    │   └── ...
+    ├── bidding/
+    │   └── ...
+    ├── notification/
+    │   └── ...
+    ├── marketplace/
+    │   └── ...
+    └── workflow/
+        └── ...
+```
+
+---
+
+## Multi-Tenancy: Schema-Per-Tenant
+
+Cada tenant possui seu **próprio schema** no PostgreSQL:
+
+```sql
+-- Hibernate automaticamente faz:
+SET search_path TO "tenant_clientes_silva";
+SELECT * FROM users WHERE active = true;
+-- Só acessa dados deste tenant. Impossível vazar.
+```
+
+**Vantagens:**
+- ✅ Isolamento total de dados (zero risco de data leak)
+- ✅ Performance previsível (índices menores)
+- ✅ Backup/restore granular (`pg_dump -n "tenant_x"`)
+- ✅ Saída do SaaS facilitada (cópia schema + módulos = deploy standalone)
+
+---
+
+## Fluxo de Definição de Módulo
+
+### 1. Domain Layer (Pura)
+Define as regras de negócio sem dependências:
+
+```java
+@Data
+@NoArgsConstructor
+public class ContactEntity {
+    private String id;
+    private String tenantId;
+    private String name;
+    private String email;
+
+    public void validate() throws BusinessException {
+        if (name == null || name.isBlank()) {
+            throw new BusinessException("ERR_001", "Name required");
+        }
+    }
+}
+```
+
+### 2. Application Layer (Use Cases)
+Orquestra domain + infrastructure:
+
+```java
+@Service
+@Transactional
+public class CrmService {
+    private final IContactRepository repository;
+
+    public ContactResponse createContact(CreateContactRequest request) {
+        ContactEntity entity = new ContactEntity();
+        entity.setTenantId(TenantContext.getTenantId());
+        entity.setName(request.getName());
+        entity.validate();
+
+        ContactEntity saved = repository.save(entity);
+        return mapper.toResponse(saved);
+    }
+}
+```
+
+### 3. Infrastructure Layer (Persistência)
+Implementa a port:
+
+```java
+@Repository
+public class ContactRepositoryAdapter implements IContactRepository {
+    private final ContactSpringDataRepository springRepository;
+
+    @Override
+    public ContactEntity save(ContactEntity entity) {
+        ContactJpa jpa = toJpa(entity);
+        ContactJpa saved = springRepository.save(jpa);
+        return toDomain(saved);
+    }
+}
+```
+
+### 4. Presentation Layer (API)
+Expõe via REST:
+
+```java
+@RestController
+@RequestMapping("/v1/crm/contacts")
+public class CrmController {
+    private final CrmService service;
+
+    @PostMapping
+    @PreAuthorize("hasPermission('crm', 'contacts', 'create')")
+    public ResponseEntity<ApiResponse<ContactResponse>> create(
+            @RequestBody @Valid CreateContactRequest request) {
+        ContactResponse response = service.createContact(request);
+        return ResponseEntity.status(201)
+            .body(ApiResponse.success(response));
+    }
+}
+```
+
+---
+
+## Regras de Organização
+
+| Regra | Por quê |
+|-------|--------|
+| **Sem dependência cíclica** | Domain → Application → Infrastructure |
+| **Shared é base** | Tudo importa de shared/ (exceptions, security, utils) |
+| **Módulos independentes** | Cada módulo só importa de shared/ e core/, nunca entre si |
+| **Contracts via interfaces** | Cada camada usa ports (interfaces), nunca implementações diretas |
+| **DTOs para API** | Nunca expor entity diretamente em JSON |
+| **TenantContext obrigatório** | Todo query deve filtrar por tenant_id |
+
+---
+
+## Como Adicionar Novo Domínio
+
+```
+src/main/java/br/com/albcore/novo_dominio/
+├── domain/        # Lógica pura
+│   ├── NovaEntity.java
+│   ├── INovaRepository.java
+│   └── package-info.java
+├── application/   # Use cases
+│   ├── NovaService.java
+│   └── dto/
+├── infrastructure/# Persistência
+│   ├── NovaJpa.java
+│   ├── NovaRepositoryAdapter.java
+│   └── NovaSpringDataRepository.java
+└── presentation/  # Controllers
+    └── NovaController.java
+```
+
+---
+
+## Como Adicionar Novo Módulo
+
+Mesmo padrão, mas dentro de `/modules/<nome>`:
+
+```
+src/main/java/br/com/albcore/modules/novo_modulo/
+├── NovoModuleDescriptor.java    # ← Declara menus!
+├── domain/
+├── application/
+├── infrastructure/
+└── presentation/
+```
+
+<Callout type="info">
+  Ver **[Checklist: Novo Módulo](../contributing/novo-modulo.mdx)** para guia completo.
+</Callout>
+
+

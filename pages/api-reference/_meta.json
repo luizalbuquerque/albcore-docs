@@ -1,4 +1,5 @@
 {
+  "exemplos": "Exemplos de API (Curl)",
   "authentication": "Autenticação",
   "responses": "Padrão de Resposta",
   "errors": "Erros & Códigos",

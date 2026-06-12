@@ -1,0 +1,303 @@
+---
+title: Fluxo Completo - AlbCore
+description: Fluxo completo de uma requisição, criação de tenant, comunicação entre módulos
+---
+
+# 🔄 Fluxo Completo — AlbCore Platform
+
+**Consolidado de:** `README2.md` + `ORGANOGRAMA.md`
+
+---
+
+## 1. Fluxo: Do HTTP até o Banco
+
+```
+Cliente HTTP (browser/app)
+    │  GET /api/v1/crm/contacts
+    │  Headers: Authorization: Bearer <jwt>, X-Tenant-Id: tenant_clinica_silva
+    ▼
+JwtAuthenticationFilter
+    1. Extrai token do header Authorization
+    2. Valida JWT (assinatura + expiração + blacklist Redis)
+    3. Extrai: userId, roles [SELLER], tenant: "tenant_clinica_silva"
+    4. Seta TenantContext.setTenantId("tenant_clinica_silva")
+    5. Seta SecurityContext com as roles do usuário
+    ▼
+RateLimitFilter
+    6. Verifica rate limit (100/min público, 1000/min autenticado)
+    ▼
+TenantInterceptor
+    7. Confirma que X-Tenant-Id está presente
+    8. Valida formato do tenant_id (regex)
+    ▼
+@ModuleGuard("CRM")
+    9. Verifica se feature flag CRM está ativa pro tenant
+    10. Se não → retorna 403 "Module not available for this tenant"
+    ▼
+CrmController
+    11. @GetMapping("/v1/crm/contacts")
+    12. @PreAuthorize("@auth.hasPermission('crm','contacts','read')")
+    13. Verifica permissions da role SELLER pro tenant
+        SELLER tem "crm:contacts:read" → ✅ permitido
+    14. Chama CrmService.listContacts()
+    ▼
+CrmService
+    15. Regras de negócio (filtros, validações, paginação)
+    16. Chama IContactRepository.findAll()
+    ▼
+Hibernate Multi-Tenancy
+    17. SchemaPerTenantConnectionProvider
+        → SET search_path TO "tenant_clinica_silva"
+    18. SELECT * FROM contacts WHERE ...
+    19. Só acessa dados deste tenant. Isolamento total no banco.
+    ▼
+Response
+    {
+      "success": true,
+      "code": "SUCCESS",
+      "data": [ { "id": "...", "name": "João Silva", ... } ],
+      "timestamp": "2026-06-12T18:00:00"
+    }
+```
+
+---
+
+## 2. Criação de um Tenant — Passo a Passo
+
+**MASTER (role: OWNER, tenant_id: NULL)**
+
+```bash
+# 1. Criar um Template de Produto
+POST /api/v1/master/templates
+{
+  "name": "Clínica SaaS",
+  "modules": ["SCHEDULING", "CRM", "PAYMENT", "NOTIFICATION"],
+  "menuOverrides": [
+    { "key": "crm-contacts", "label": "Pacientes" }
+  ]
+}
+```
+
+**↓**
+
+```bash
+# 2. Criar um Tenant usando o Template
+POST /api/v1/master/tenants
+{
+  "name": "Clínica Dr. Silva",
+  "schemaName": "tenant_clinica_silva",
+  "templateId": "clinica-saas",
+  "planId": "pro",
+  "ownerEmail": "drsilva@email.com",
+  "ownerName": "Dr. Silva"
+}
+```
+
+**↓ SISTEMA AUTOMÁTICO**
+
+```sql
+-- 3. CREATE SCHEMA "tenant_clinica_silva"
+
+-- 4. Flyway → cria tabelas base: users, feature_flag, permissions
+
+-- 5. Flyway → cria tabelas dos módulos ativos:
+--    appointments (SCHEDULING)
+--    contacts (CRM)
+--    payments (PAYMENT)
+--    notifications (NOTIFICATION)
+
+-- 6. INSERT feature flags:
+--    SCHEDULING=true, CRM=true, PAYMENT=true, NOTIFICATION=true
+--    MARKETPLACE=false, BIDDING=false, ...
+
+-- 7. INSERT permissions padrão para cada role:
+--    OWNER → *:*:*
+--    MANAGER → scheduling:*:*, crm:*:*, ...
+--    FINANCIAL → payment:*:*, ...
+
+-- 8. INSERT usuário owner:
+--    email: "drsilva@email.com", role: OWNER
+
+-- 9. INSERT tenant_config com menu overrides do template:
+--    "crm-contacts" → label: "Pacientes"
+```
+
+**↓ TENANT OWNER (role: OWNER, tenant_id: "tenant_clinica_silva")**
+
+```bash
+# 10. Login
+POST /api/v1/auth/login
+Headers: X-Tenant-Id: tenant_clinica_silva
+{
+  "email": "drsilva@email.com",
+  "password": "<senha>"
+}
+
+# 11. Vê menus (herdados do módulo + overrides do template)
+GET /api/v1/tenant/config/menus
+# → Dashboard, Agenda, Pacientes, Pagamentos, Notificações, Config
+
+# 12. Customiza menus (opcional)
+PUT /api/v1/tenant/config/menus
+# → Esconde "Pipeline", reordena itens
+
+# 13. Ajusta permissions das roles (opcional)
+PUT /api/v1/tenant/config/permissions
+# → TEAM agora também pode ver contatos (crm:contacts:read)
+
+# 14. Cadastra usuários
+POST /api/v1/users
+{
+  "name": "Ana",
+  "email": "ana@clinica.com",
+  "roles": ["TEAM"]
+}
+```
+
+**↓ USUÁRIOS DO TENANT (role: TEAM, SELLER, CLIENT, etc.)**
+
+```bash
+# 15. Usam o sistema normalmente
+GET /api/v1/scheduling/appointments  # → Agenda
+GET /api/v1/crm/contacts             # → Pacientes
+GET /api/v1/payment/transactions     # → Pagamentos
+
+# ★ Tudo roda no schema "tenant_clinica_silva"
+# ★ Permissions filtram o que cada role pode ver/fazer
+# ★ Impossível acessar dados de outro tenant
+```
+
+---
+
+## 3. Comunicação Entre Módulos
+
+**Problema:** BIDDING precisa saber quem é o usuário logado, mas não pode importar IDENTITY.
+
+**Solução:** Via interfaces em `shared/`
+
+```
+BIDDING
+    │
+    ├─→ Chama interface do shared/kernel → UserContext
+    │
+IDENTITY
+    │
+    └─→ Implementa essa interface por baixo
+
+BIDDING nunca sabe que IDENTITY existe
+```
+
+**Implementação:**
+
+```java
+// shared/kernel/UserContext.java (Port/Interface)
+public interface UserContext {
+    String getUserId();
+    Set<String> getRoles();
+    boolean hasPermission(String permission);
+}
+
+// core/identity/.../AuthService.java (Adapter)
+@Component
+public class AuthServiceAdapter implements UserContext {
+    @Override
+    public String getUserId() {
+        return getCurrentUserId();
+    }
+}
+
+// modules/bidding/.../BiddingService.java (Consumer)
+@Service
+public class BiddingService {
+    private final UserContext userContext;  // Injeta a interface
+
+    public void createBid() {
+        String userId = userContext.getUserId();
+        // Use userId
+    }
+}
+```
+
+---
+
+## 4. Ativação e Desativação de Módulos
+
+```
+Tenant PRO ativa módulo CRM
+    ↓
+Feature flag gravada: tenant_id + module_id + enabled
+    ↓
+Próxima requisição ao CRM passa pelo ModuleGuard
+    ↓
+ModuleGuard consulta o flag → liberado ✅
+
+Tenant cancela CRM
+    ↓
+Flag desativada
+    ↓
+Dados permanecem no schema (não apaga)
+    ↓
+Acesso bloqueado até reativar ou exportar
+```
+
+---
+
+## 5. Extração de um Tenant (Saída da Plataforma)
+
+Cliente da fábrica quer levar o código embora:
+
+```
+1. AlbCore identifica quais módulos o tenant usa
+   → [AUTH, CRM, BIDDING]
+
+2. Cada módulo declara suas dependências
+   → BIDDING requires [AUTH, CRM]
+   → AUTH requires []
+
+3. Script de exportação:
+   → copia os módulos declarados
+   → copia as migrations desses módulos
+   → faz dump do schema do tenant
+   → gera projeto standalone com shared/kernel incluso
+
+4. O resto da AlbCore não é tocado
+5. O tenant é removido da plataforma
+6. Outros clientes nem percebem
+```
+
+---
+
+## 6. Exemplos de Tenants Reais
+
+### Tenant 1: Clínica Dr. Silva
+
+```
+Módulos ATIVOS: SCHEDULING, CRM, PAYMENT, NOTIFICATION
+Menus: Dashboard, Agenda, Pacientes (renomeado), Pagamentos, Notificações, Config
+Permissions customizadas por role
+```
+
+### Tenant 2: Locadora FastCar
+
+```
+Módulos ATIVOS: CRM, DOCUMENT, PAYMENT
+Menus: Dashboard, Clientes, Contratos (renomeado), Cobranças (renomeado), Config
+Permissions diferentes (SELLER acessa document:contracts:read)
+```
+
+### Tenant 3: Fábrica MetalSul
+
+```
+Módulos ATIVOS: CRM, BIDDING, DOCUMENT, PAYMENT, WORKFLOW, NOTIFICATION
+Menus: Dashboard + todos os módulos ativos
+Plano Enterprise + mais complexidade
+```
+
+---
+
+## 🔗 Próximas Leituras
+
+- **[Organograma](./organograma.mdx)** — Visão geral, roles, RBAC
+- **[Estrutura](./estrutura.mdx)** — Clean Architecture, camadas
+
+

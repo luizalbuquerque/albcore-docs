@@ -1,5 +1,8 @@
 {
-  "layers": "Camadas (Clean Architecture)",
+  "organograma": "Organograma Completo",
+  "estrutura": "Estrutura (Clean Architecture)",
+  "fluxo-completo": "Fluxo Completo da Plataforma",
+  "layers": "Camadas",
   "folder-structure": "Estrutura de Pastas",
   "request-flow": "Fluxo de Requisição",
   "decisions": "Decisões Arquiteturais"

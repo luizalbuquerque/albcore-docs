@@ -1,0 +1,226 @@
+---
+title: Exemplos de API
+description: Exemplos práticos de chamadas curl para todos os principais endpoints
+---
+
+# 📌 Exemplos de API — Curl
+
+**Consolidado de:** `API_EXAMPLES.md`
+
+---
+
+## Autenticação
+
+### Registrar usuário
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant_demo" \
+  -d '{
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "password": "Admin!123"
+  }'
+
+# Response:
+# {
+#   "success": true,
+#   "data": {
+#     "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
+#     "refreshToken": "...",
+#     "expiresIn": 86400
+#   }
+# }
+```
+
+### Login
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant_demo" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "Admin!123"
+  }'
+
+# Salvar o token
+TOKEN="eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Refresh token
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "X-Refresh-Token: <seu_refresh_token>"
+```
+
+### Logout (blacklist)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+```
+
+---
+
+## Feature Flags
+
+### Listar todas as flags
+
+```bash
+curl http://localhost:8080/api/v1/feature-flags \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+
+# Response:
+# {
+#   "success": true,
+#   "data": [
+#     {
+#       "key": "CRM",
+#       "enabled": true,
+#       "tenantId": "tenant_demo"
+#     },
+#     {
+#       "key": "SCHEDULING",
+#       "enabled": false,
+#       "tenantId": "tenant_demo"
+#     }
+#   ]
+# }
+```
+
+### Habilitar flag (admin only)
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/feature-flags/SCHEDULING/enable \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+```
+
+### Desabilitar flag
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/feature-flags/SCHEDULING/disable \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+```
+
+---
+
+## Health & Status
+
+### Health check (público)
+
+```bash
+curl http://localhost:8080/api/health
+
+# Response:
+# {
+#   "success": true,
+#   "code": "SUCCESS",
+#   "data": {
+#     "status": "UP",
+#     "service": "AlbCore Platform"
+#   }
+# }
+```
+
+### Swagger UI
+
+```
+http://localhost:8080/api/swagger-ui.html
+```
+
+---
+
+## Tenants (Master Only)
+
+### Criar tenant
+
+```bash
+curl -X POST http://localhost:8080/api/v1/master/tenants \
+  -H "Authorization: Bearer $MASTER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Clínica Dr. Silva",
+    "schemaName": "tenant_clinica_silva",
+    "templateId": "clinica-saas",
+    "planId": "pro",
+    "ownerEmail": "drsilva@email.com",
+    "ownerName": "Dr. Silva"
+  }'
+```
+
+### Listar tenants
+
+```bash
+curl http://localhost:8080/api/v1/master/tenants \
+  -H "Authorization: Bearer $MASTER_TOKEN"
+```
+
+---
+
+## CRM (se módulo ativado)
+
+### Criar contato
+
+```bash
+curl -X POST http://localhost:8080/api/v1/crm/contacts \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant_demo" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "phone": "(11) 99999-9999"
+  }'
+```
+
+### Listar contatos
+
+```bash
+curl "http://localhost:8080/api/v1/crm/contacts?page=0&size=10" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+```
+
+---
+
+## Erros Comuns
+
+### 401 Unauthorized
+
+```
+Causa: Token expirado ou inválido
+Solução: Fazer novo login
+```
+
+### 403 Forbidden
+
+```
+Causa: Permissão insuficiente ou módulo desativado
+Solução: Verificar feature flag ou permission da role
+```
+
+### 404 Not Found
+
+```
+Causa: Recurso não existe
+Solução: Verificar tenant_id e ID do recurso
+```
+
+---
+
+## Dicas
+
+1. **Sempre enviar `X-Tenant-Id` header** (exceto endpoints públicos como login)
+2. **Token expira em 24h** (JWT_ACCESS_EXPIRATION = 86400000ms)
+3. **Fazer refresh antes que expire:** Use `X-Refresh-Token`
+4. **Testar no Swagger UI** antes de usar curl
+5. **Debug com `curl -v`** para ver headers
+
+

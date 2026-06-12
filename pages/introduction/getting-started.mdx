@@ -1,0 +1,142 @@
+---
+title: Getting Started - Primeiros Passos
+description: Setup rápido, projeto demo, primeira requisição
+---
+
+# 🚀 Começando — Getting Started
+
+---
+
+## 1. Pré-requisitos
+
+- **Java 21 LTS** (Virtual threads)
+- **Docker + Docker Compose** (Infra local)
+- **Git** (Clone do repo)
+
+```bash
+java -version          # Deve retornar 21.x.x
+docker --version       # Docker instalado
+docker-compose --version  # Docker Compose instalado
+```
+
+---
+
+## 2. Clone e Setup Inicial
+
+```bash
+# Clone
+git clone https://github.com/luizalbuquerque/albcore-api.git
+cd albcore-api
+
+# Copiar variáveis de desenvolvimento
+cp infra/env/.env.dev .env
+
+# Verificar maven
+./mvnw -version
+```
+
+---
+
+## 3. Levantar Infraestrutura Local
+
+**Terminal 1:**
+```bash
+docker-compose -f infra/docker/docker-compose.dev.yaml up -d
+
+# Verificar:
+docker-compose ps
+# Esperado: postgres (5433), redis, rabbitmq rodando
+```
+
+---
+
+## 4. Rodar a Aplicação
+
+**Terminal 2:**
+```bash
+./mvnw spring-boot:run
+
+# Esperado:
+# Started AlbCoreApplication in X seconds
+# Listening on port 8080
+```
+
+---
+
+## 5. Seu Primeiro Request
+
+**Terminal 3:**
+```bash
+# Health check
+curl http://localhost:8080/api/health
+
+# Resposta:
+# {"success":true,"code":"SUCCESS","data":{"status":"UP"}...}
+
+# Swagger UI (abrir no navegador)
+# http://localhost:8080/api/swagger-ui.html
+```
+
+---
+
+## 6. Criar Usuário Padrão
+
+```bash
+# Registrar
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant_demo" \
+  -d '{
+    "name": "Admin",
+    "email": "admin@localhost",
+    "password": "Admin!123"
+  }'
+
+# Login (obter JWT)
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant_demo" \
+  -d '{
+    "email": "admin@localhost",
+    "password": "Admin!123"
+  }'
+
+# Salve o token retornado
+TOKEN="eyJhbGc..."
+```
+
+---
+
+## 7. Usar o Token
+
+```bash
+# Listar feature flags com autenticação
+curl http://localhost:8080/api/v1/feature-flags \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-Id: tenant_demo"
+
+# Resposta:
+# {"success":true,"data":[{"key":"SCHEDULING","enabled":true},...]}
+```
+
+---
+
+## ⚠️ Troubleshooting
+
+| Erro | Solução |
+|------|---------|
+| "Connection refused" na porta 5433 | `docker-compose up -d` não rodou ou falhou |
+| "Port 5433 already in use" | Parar container: `docker stop albcore-postgres-dev` |
+| "JWT validation failed" | Token expirado, fazer novo login |
+| "Module CRM not available" | Feature flag desativada para tenant |
+
+---
+
+## 📖 Próximos Passos
+
+1. **Ler a arquitetura:** [Estrutura](./estrutura.mdx)
+2. **Entender fluxos:** [Fluxo Completo](./fluxo-completo.mdx)
+3. **Criar novo módulo:** [Novo Módulo](../contributing/novo-modulo.mdx)
+4. **Deploy:** [Docker & Infra](../deployment/docker.mdx)
+
+

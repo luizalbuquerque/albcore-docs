@@ -1,0 +1,236 @@
+---
+title: Checklist de Implementação
+description: Fases de construção para produção com tarefas e status
+---
+
+# 📋 Checklist — Fases de Implementação
+
+**Consolidado de:** `CHECKLIST-PRODUCAO.md`
+
+---
+
+## Legenda
+
+```
+✅ = Implementado e funcional
+🔧 = Estrutura existe, precisa de implementação
+❌ = Não existe ainda, precisa criar do zero
+```
+
+---
+
+## FASE 0 — Fundação ✅ FEITA
+
+Infraestrutura técnica obrigatória.
+
+| # | Item | Status |
+|---|------|--------|
+| 0.1 | SecurityConfig | ✅ |
+| 0.2 | JWT Provider | ✅ |
+| 0.3 | JWT Authentication Filter | ✅ |
+| 0.4 | Token Blacklist (Redis) | ✅ |
+| 0.5 | Rate Limit Filter | ✅ |
+| 0.6 | TenantContext (ThreadLocal) | ✅ |
+| 0.7 | TenantInterceptor | ✅ |
+| 0.8 | Schema-per-Tenant Provider | ✅ |
+| 0.9 | Tenant Identifier Resolver | ✅ |
+| 0.10 | Hibernate Multi-Tenancy Config | ✅ |
+| 0.11 | CORS Config | ✅ |
+| 0.12 | Global Exception Handler | ✅ |
+| 0.13 | ApiResponse padronizado | ✅ |
+| 0.14 | Swagger/OpenAPI | ✅ |
+| 0.15 | Cache Config | ✅ |
+| 0.16 | Health Check | ✅ |
+| 0.17 | Tenant Provisioning | ✅ |
+| 0.18 | UserEntity | ✅ |
+| 0.19 | Role enum (8 roles) | ✅ |
+| 0.20 | IUserRepository | ✅ |
+| 0.21 | AuthService | ✅ |
+| 0.22 | AuthController | ✅ |
+| 0.23 | FeatureFlagEntity | ✅ |
+| 0.24 | FeatureFlagService | ✅ |
+| 0.25 | FeatureFlagController | ✅ |
+
+---
+
+## FASE 1 — Roles e Permissions ← PRÓXIMO PASSO
+
+Atualizar 8 roles + RBAC com permissions dinâmicas.
+
+| # | Item | Status |
+|---|------|--------|
+| 1.1 | Atualizar Role enum | ✅ |
+| 1.2 | UserEntity.isOwner/isManagement | ✅ |
+| 1.3 | PermissionEntity (domain) | ❌ |
+| 1.4 | RolePermissionEntity | ❌ |
+| 1.5 | IPermissionRepository | ❌ |
+| 1.6 | AuthorizationService | ❌ |
+| 1.7 | @RequirePermission annotation | ❌ |
+| 1.8 | Default permissions por role | ❌ |
+| 1.9 | Migration: role_permissions | ❌ |
+
+---
+
+## FASE 2 — Gestão de Usuários
+
+CRUD completo de usuários + assignment de roles.
+
+| # | Item | Status |
+|---|------|--------|
+| 2.1 | UserService (application) | ❌ |
+| 2.2 | UserController | ❌ |
+| 2.3 | GET /v1/users | ❌ |
+| 2.4 | POST /v1/users | ❌ |
+| 2.5 | PUT /v1/users/{id}/roles | ❌ |
+| 2.6 | Validações e paginação | ❌ |
+
+---
+
+## FASE 3 — Master: Tenants
+
+AlbCore cria e gerencia tenants.
+
+| # | Item | Status |
+|---|------|--------|
+| 3.1 | TenantEntity (domain) | 🔧 |
+| 3.2 | TenantConfig | ❌ |
+| 3.3 | ITenantRepository | ❌ |
+| 3.4 | TenantService + Controller | ❌ |
+| 3.5 | POST /v1/master/tenants | ❌ |
+| 3.6 | Migration: tenant_registry | ❌ |
+
+---
+
+## FASE 4 — Templates
+
+Pré-configura módulos + menus + permissions.
+
+| # | Item | Status |
+|---|------|--------|
+| 4.1 | ProductTemplate (domain) | 🔧 |
+| 4.2 | ProductTemplateService | ❌ |
+| 4.3 | POST /v1/master/templates | ❌ |
+
+---
+
+## FASE 5 — Billing
+
+Faturamento da AlbCore sobre tenants.
+
+| # | Item | Status |
+|---|------|--------|
+| 5.1 | SubscriptionEntity | ✅ |
+| 5.2 | BillingService | ❌ |
+| 5.3 | Integração gateway | ❌ |
+
+---
+
+## FASE 6 — Tenant Config
+
+Tenant personaliza menus, tema, permissions.
+
+| # | Item | Status |
+|---|------|--------|
+| 6.1 | TenantConfigService | ❌ |
+| 6.2 | GET/PUT /v1/tenant/config/menus | ❌ |
+| 6.3 | Menu Resolution Engine | ❌ |
+
+---
+
+## FASE 7 — @ModuleGuard + CRM
+
+Primeiro módulo de negócio.
+
+| # | Item | Status |
+|---|------|--------|
+| 7.1 | @ModuleGuard annotation | ❌ |
+| 7.2 | ModuleGuardAspect (AOP) | ❌ |
+| 7.3 | ContactEntity (CRM) | ❌ |
+| 7.4 | CrmController | ❌ |
+
+---
+
+## FASE 8 — Módulos Adicionais
+
+SCHEDULING, PAYMENT, MARKETPLACE, DOCUMENT, etc.
+
+| # | Item | Status |
+|---|------|--------|
+| 8.1 | Scheduling | 🔧 |
+| 8.2 | Payment | 🔧 |
+| 8.3 | Marketplace | 🔧 |
+| 8.4 | Document | 🔧 |
+| 8.5 | Bidding | 🔧 |
+| 8.6 | Notification | 🔧 |
+| 8.7 | Workflow | 🔧 |
+
+---
+
+## FASE 9 — Produção
+
+Hardening para deploy real.
+
+| # | Item | Status |
+|---|------|--------|
+| 9.1 | Flyway migrations | ❌ |
+| 9.2 | application-prod.yml | ❌ |
+| 9.3 | Logging estruturado (JSON) | ❌ |
+| 9.4 | Testes de integração | ❌ |
+| 9.5 | Seed data | ❌ |
+| 9.6 | HTTPS/SSL | ❌ |
+
+---
+
+## Números
+
+```
+✅ Implementado:    28 itens
+🔧 Parcial:        12 itens
+❌ A implementar:   52 itens
+─────────────────────────────
+Total:              92 itens
+```
+
+---
+
+## Ordem Recomendada
+
+```
+FASE 0 ✅ (fundação)
+  ↓
+FASE 1 (roles + permissions)
+  ↓
+FASE 2 (users CRUD)
+  ↓
+FASE 3 (master tenants)  +  FASE 9 (produção)
+  ↓
+FASE 4 (templates)
+  ↓
+FASE 6 (menus) + FASE 7 (@ModuleGuard + CRM)
+  ↓
+FASE 8 (módulos adicionais)
+```
+
+---
+
+## Sprint Recomendado
+
+### Sprint 1 (semana 1-2): Fase 1 + 2
+- Atualizar Role enum
+- Implementar RBAC com permissions
+- UserService + UserController
+- **Frontend pode integrar users/roles**
+
+### Sprint 2 (semana 3-4): Fase 3 + 9
+- TenantEntity + provisioning
+- Configurar Flyway, Docker, prod.yml
+- Setup de produção
+
+### Sprint 3 (semana 5-6): Fase 4 + 7
+- ProductTemplate
+- @ModuleGuard + CRM module
+
+### Sprint 4+ (semana 7+): Fases 5, 6, 8
+- Billing, Menus, Módulos adicionais
+
+

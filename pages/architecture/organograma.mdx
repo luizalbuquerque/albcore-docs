@@ -1,0 +1,267 @@
+---
+title: Organograma Completo - AlbCore
+description: Estrutura organizacional, roles, arquitetura e fluxos da plataforma AlbCore
+---
+
+import { Callout } from 'nextra/components'
+
+# 📊 Organograma Completo - AlbCore Platform
+
+**Versão:** 1.2.1 (Atualizado)
+**Última atualização:** 12 de Junho de 2026
+
+---
+
+## 1. Visão Geral — O que é o quê
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│                     ALBCORE PLATFORM (código único)                       │
+│                     =================================                     │
+│                                                                          │
+│   Um único código Java que serve TODOS os clientes.                      │
+│   Cada cliente (tenant) tem seu próprio schema no banco.                 │
+│   O código é o mesmo. Os dados são isolados.                             │
+│                                                                          │
+│   Arquitetura: Modular + Hexagonal (Ports & Adapters)                    │
+│   Cada módulo: domain/ → application/ → infrastructure/ → presentation/  │
+│                                                                          │
+│   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│   │   shared/    │  │   core/      │  │   master/    │  │   modules/   │ │
+│   │  (infra)     │  │ (obrigatório)│  │ (plataforma) │  │ (negócio    │ │
+│   │              │  │              │  │              │  │  dos        │ │
+│   │ Segurança    │  │ Identity    │  │ Gestão de    │  │  tenants)   │ │
+│   │ JWT, Redis   │  │ (auth,      │  │ tenants,     │  │              │ │
+│   │ Multi-tenant │  │  users,     │  │ billing,     │  │ CRM, Agenda  │ │
+│   │ Configs      │  │  roles)     │  │ templates    │  │ Pagamento    │ │
+│   │ Exceptions   │  │              │  │              │  │ Documentos   │ │
+│   │ RBAC+Perms   │  │ FeatureFlags│  │ Só AlbCore   │  │ Licitações   │ │
+│   │              │  │ (controla   │  │ acessa       │  │ Notificações │ │
+│   │ Sem entities │  │  modules)   │  │              │  │ Workflows    │ │
+│   │ de negócio   │  │              │  │              │  │              │ │
+│   │              │  │ Com entities│  │              │  │ Liga/desliga │ │
+│   │              │  │ e tabelas   │  │              │  │ feature flag │ │
+│   └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘ │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Os 8 Roles — Sem prefixo, contexto define o domínio
+
+```java
+public enum Role {
+    OWNER,        // Dono (master=root, tenant=dono)
+    MANAGER,      // Gerente (master=global, tenant=local)
+    FINANCIAL,    // Financeiro
+    COMMERCIAL,   // Comercial (contexto master)
+    SELLER,       // Vendas (contexto tenant)
+    SUPPORT,      // Suporte
+    TEAM,         // Colaborador (contexto tenant)
+    CLIENT        // Cliente final (contexto tenant)
+}
+```
+
+<Callout type="info">
+  **Mesma role, significado diferente pelo contexto:**
+  - `OWNER + tenant_id=NULL` → super-admin root da AlbCore
+  - `OWNER + tenant_id="tenant_X"` → dono do tenant X
+</Callout>
+
+---
+
+## 3. RBAC + Permissions
+
+**Permission = "modulo:recurso:acao"**
+
+Exemplos:
+- `"crm:contacts:read"`
+- `"crm:contacts:write"`
+- `"scheduling:appointments:*"`
+- `"payment:reports:read"`
+- `"*:*:*"` (OWNER — acesso total)
+
+### Permissões Padrão por Role
+
+**MASTER (tenant_id = NULL, schema public):**
+| Role | Permissions |
+|------|------------|
+| OWNER | `*:*:*` |
+| MANAGER | `tenants:*:*`, `templates:*:*`, `modules:*:*` |
+| FINANCIAL | `billing:*:*`, `reports:financial:read` |
+| COMMERCIAL | `tenants:*:read`, `metrics:*:read`, `tenants:trial:write` |
+| SUPPORT | `tenants:*:read` (read-only em qualquer tenant) |
+
+**TENANT (tenant_id = "tenant_X", schema do tenant):**
+| Role | Permissions |
+|------|------------|
+| OWNER | `*:*:*` |
+| MANAGER | `crm:*:*`, `scheduling:*:*`, `users:*:read` |
+| FINANCIAL | `payment:*:*`, `reports:financial:read` |
+| SELLER | `crm:contacts:*`, `crm:leads:*` |
+| SUPPORT | `crm:contacts:read`, `scheduling:appointments:read` |
+| TEAM | `scheduling:appointments:read` |
+| CLIENT | `scheduling:own:read`, `documents:own:read` |
+
+---
+
+## 4. 3 Camadas de Proteção
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│  CAMADA 1 — Rota                                                         │
+│  /api/v1/master/billing  →  ✅ Master FINANCIAL  ❌ Tenant FINANCIAL     │
+│                                                                          │
+│  CAMADA 2 — Permissions                                                  │
+│  Permissions DIFERENTES por contexto, mesma role                         │
+│                                                                          │
+│  CAMADA 3 — Schema do banco                                              │
+│  SET search_path TO "public"  (master)                                   │
+│  SET search_path TO "tenant_X" (tenant)                                  │
+│  Isolamento FÍSICO dos dados. Impossível vazar.                          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 5. Estrutura de Pastas do Código
+
+```
+src/main/java/br/com/albcore/
+├── shared/            # Infraestrutura técnica
+│   ├── component/     # TenantContext, Interceptors
+│   ├── config/        # Security, OpenAPI, Hibernate, Cache
+│   ├── exception/     # Exceptions
+│   ├── multitenancy/  # Schema routing
+│   ├── security/      # JWT, RBAC, Rate Limiting
+│   └── util/          # ApiResponse, Validators
+├── core/              # Funcionalidades obrigatórias
+│   ├── identity/      # Auth, Users, Roles
+│   └── featureflag/   # Feature flags por tenant
+├── master/            # Painel de controle AlbCore
+│   ├── tenant/        # Gestão de tenants
+│   ├── product/       # Templates e feature flags
+│   └── billing/       # Faturamento
+└── modules/           # Negócio dos tenants
+    ├── crm/
+    ├── scheduling/
+    ├── payment/
+    ├── document/
+    ├── bidding/
+    ├── notification/
+    ├── marketplace/
+    └── workflow/
+```
+
+---
+
+## 6. Banco de Dados — PostgreSQL
+
+```
+PostgreSQL (database: albcore)
+│
+├── Schema: public                    ← PLATAFORMA (master)
+│   ├── tenant_registry              ← Todos os tenants
+│   ├── product_template             ← Templates de produto
+│   ├── subscription_plan            ← Planos
+│   └── subscription                 ← Assinaturas
+│
+├── Schema: tenant_clinica_silva     ← TENANT 1
+│   ├── users
+│   ├── role_permissions
+│   ├── feature_flag
+│   ├── appointments    (SCHEDULING)
+│   ├── contacts        (CRM)
+│   ├── payments        (PAYMENT)
+│   └── notifications   (NOTIFICATION)
+│
+├── Schema: tenant_fastcar           ← TENANT 2
+│   ├── users
+│   ├── contacts        (CRM)
+│   ├── documents       (DOCUMENT)
+│   └── payments        (PAYMENT)
+│
+└── Schema: tenant_metalsul          ← TENANT 3
+    ├── users
+    ├── contacts        (CRM)
+    ├── bids            (BIDDING)
+    ├── documents       (DOCUMENT)
+    ├── workflows       (WORKFLOW)
+    └── notifications   (NOTIFICATION)
+```
+
+---
+
+## 7. Fluxo de Uma Request
+
+```
+Cliente HTTP (browser/app)
+    │  GET /api/v1/crm/contacts
+    │  Headers: Authorization: Bearer <jwt>, X-Tenant-Id: tenant_X
+    ▼
+┌─ JwtAuthenticationFilter ────────────────────┐
+│  1. Extrai token do header Authorization      │
+│  2. Valida JWT + blacklist Redis              │
+│  3. Extrai: userId, roles, tenant_id          │
+│  4. Seta TenantContext e SecurityContext      │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ RateLimitFilter ────────────────────────────┐
+│  Verifica rate limit (100/min public, 1000/  │
+│  min autenticado)                             │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ TenantInterceptor ──────────────────────────┐
+│  Confirma X-Tenant-Id presente e válido      │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ @ModuleGuard("CRM") ────────────────────────┐
+│  Verifica se feature flag CRM está ativa     │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ CrmController ──────────────────────────────┐
+│  @PreAuthorize("@auth.hasPermission(...)")   │
+│  Verifica permissions da role para tenant    │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ CrmService ─────────────────────────────────┐
+│  Regras de negócio, validações               │
+└──────────────────────────────────────────────┘
+    ▼
+┌─ Hibernate Multi-Tenancy ────────────────────┐
+│  SET search_path TO "tenant_X"               │
+│  SELECT * FROM contacts (só deste tenant)    │
+└──────────────────────────────────────────────┘
+    ▼
+Response
+```
+
+---
+
+## 8. Decisões Arquiteturais
+
+| Decisão | Escolha |
+|---------|---------|
+| Arquitetura | Modular Monolith + Hexagonal |
+| Camadas | domain/ → application/ → infrastructure/ → presentation/ |
+| Multi-tenancy | **Schema-per-tenant** (PostgreSQL) |
+| Organização | shared/ + core/ + master/ + modules/ |
+| Identity | Em core/ (obrigatório para todos) |
+| Roles | 8 roles sem prefixo |
+| Autorização | RBAC + Permissions dinâmicas |
+| Menus | Herdados de ModuleDescriptors |
+| Templates | Pré-configuram módulos + menus + perms |
+| Independência | Módulos só importam de shared/, nunca entre si |
+
+---
+
+## 📖 Próximas Leituras
+
+- **[Arquitetura - Estrutura](./estrutura.mdx)** — Detalhes das camadas
+- **[Arquitetura - Análise](./analise.mdx)** — Análise completa
+- **[Fluxo Completo](./fluxo-completo.mdx)** — Exemplos de uso
+- **[Checklist de Deploy](../deployment/checklist.mdx)** — Fases de implementação
+
+
