@@ -12,9 +12,28 @@ Publicada em **https://api-core.albuquerquetech.com.br/documentation**
 
 ## Desenvolvimento
 
+### Opção 1: Script Automático
+```bash
+./start-docs.sh
+```
+
+### Opção 2: Manual
+```bash
+npm install   # primeira vez
+npm run dev   # http://localhost:3001
+```
+
+### Troubleshooting
+
+**Erro: 'next' não reconhecido**
 ```bash
 npm install
-npm run dev      # http://localhost:3001
+```
+
+**Porta 3001 em uso**
+```bash
+netstat -ano | findstr :3001
+taskkill //PID <numero> //F
 ```
 
 ## Build
